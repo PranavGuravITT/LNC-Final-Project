@@ -5,18 +5,18 @@
 
 class Employee{
     private:
-    int employeeId;
+    std::string employeeId;
     std::string employeeName;
     std::string password;
 
     public:
-    Employee::Employee(int empId, const std::string& empName, const std::string& pwd);
-    int getEmployeeId();
+    Employee(std::string empId, const std::string& empName, const std::string& pwd);
+    std::string getEmployeeId();
     std::string getEmployeeName();
     std::string getPassword();
 
     bool login();
     void placeOrder();
-    void giveFeedback()
+    void giveFeedback();
 };
 #endif

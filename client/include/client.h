@@ -11,7 +11,9 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
-
+#include "admin.h"
+#include <jsoncpp/json/value.h>
+#include <jsoncpp/json/json.h>
 class Client {
 public:
     Client(const std::string& server_address, int port);
@@ -21,16 +23,21 @@ public:
 private:
     std::string server_address_;
     int port_;
-    int client_fd_;
+    int clientSocket;
     struct sockaddr_in server_addr_;
-    const int buffer_size_ = 1024;
+    const int bufferSize = 1024;
 
     void create_socket();
     void connect_to_server();
-    void authenticate(const std::string& user_id, const std::string& password);
-    void storeFoodItem();
+    bool authenticate(const std::string& user_id, const std::string& password);
+    void sendRequestToServer(const std::string& message);
+    void getMenuDataRequestToServer(const std::string& message);
     void adminScreen();
-    void takeEmployeeInformation();
+    void chefScreen();
+    void employeeScreen();
+    void sendFeedback();
+    void getRecommendations();
+    void storeRecommendations(const std::string &recommendationsStr);
 };
 
 #endif

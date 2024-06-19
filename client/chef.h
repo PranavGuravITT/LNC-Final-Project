@@ -5,12 +5,12 @@
 
 class Chef{
     private:
-    int chefId;
-    int pin;
+    std::string chefId;
+    std::string password;
     std::string chefName;
     public:
     bool login();
-    
-
+    public:
+    void rollOutMenu();
 };
 #endif 

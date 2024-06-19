@@ -9,14 +9,15 @@
 #include <mysql_driver.h>
 
 class Database {
+
+private:
+    sql::mysql::MySQL_Driver *driver;
+   sql::Connection *connection;
 public:
     Database(const std::string& host, const std::string& user, const std::string& password, const std::string& database);
     ~Database();
     sql::Connection* getConnection();
 
-private:
-    sql::mysql::MySQL_Driver *driver;
-    sql::Connection *connection;
 };
 
 #endif // DATABASE_H

@@ -2,23 +2,33 @@
 #define FOODITEM_H
 
 #include <iostream>
+#include <string>
 
-class FoodItem{
-    private:
+class FoodItem {
+private:
     bool availability;
     int foodItemId;
     int rating;
     double price;
     std::string foodItemName;
 
-    public:
-    FoodItem(const std::string& sname, int id, double price);
+public:
+    FoodItem();
+    FoodItem(const std::string& sname, double price);
+    
+    // Getters
     std::string getFoodItemName() const;
-    void setAvailability(bool availability) ;
     bool checkAvailability() const;
     int getRating() const;
     double getPrice() const;
     int getFoodItemId() const;
+    
+    // Setters
+    void setAvailability(bool availability);
+    void setFoodItemId(int id);
+    void setRating(int rating);
+    void setPrice(double price);
+    void setFoodItemName(const std::string& name);
 };
 
-#endif
+#endif // FOODITEM_H

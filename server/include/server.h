@@ -1,4 +1,4 @@
-// Server.hpp
+
 
 #ifndef SERVER_HPP
 #define SERVER_HPP
@@ -13,7 +13,13 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>
+#include <vector>
 #include "foodItem.h"
+#include "employee.h"
+#include "feedback.h"
+#include "recommendationEngine.h"
+#include <jsoncpp/json/value.h>
+#include <jsoncpp/json/json.h>
 
 class Server {
 public:
@@ -35,10 +41,18 @@ private:
     void bind_socket();
     void listen_for_connections();
     void accept_connection();
-    void handle_client();
+    void handleClient();
     bool validate_user(const std::string& user_id, const std::string& password);
-    void initialize_user_db();
+    void initializeDatabase();
     bool addFoodItemToDatabase(const FoodItem &foodItem); 
+    bool addEmployeeToDatabase(Employee employee);
+    std::vector<FoodItem> fetchFoodItemsFromDatabase();
+    bool deleteFoodItemFromDatabase(int foodItemId);
+    bool deleteUserFromDatabase(const std::string &user_id);
+    bool addFeedbackToDatabase(const FeedbackDetails &feedback);
+    std::vector<FeedbackDetails> fetchFeedbacksFromDatabase();
+    bool addRecommendationToDatabase(const FoodItem &item);
+    std::vector<FoodItem> fetchRecommendationsFromDatabase();
 };
 
 #endif

@@ -1,16 +1,24 @@
 #ifndef ADMIN_H
 #define ADMIN_H
 
-#include <iostream>
+#include <string>
+#include <sstream>
 
-class Admin{
-    private:
-    int adminId;
-    std::string eadminName;
+class Admin
+{
+private:
+    std::string adminId;
+    std::string adminName;
     std::string password;
 
-    public:
-    bool login();
-    void addItemToMenu();
+public:
+    Admin(const std::string &id, const std::string &name, const std::string &pass);
+
+    std::string addFoodItemToMenuRequest();
+    std::string addEmployeeRequest();
+    std::string deleteEmployeeRequest();
+    std::string viewMenuRequest();
+    std::string deleteFoodItemRequest();
 };
+
 #endif

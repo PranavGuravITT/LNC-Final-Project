@@ -35,7 +35,7 @@ bool Employee::login() {
     return true;
 }
 
-void Employee::placeOrder() {
+void Employee::viewNotifications() {
     // Implement order placing logic here
     std::cout << "Placing order for employee: " << employeeName << std::endl;
     // Additional logic as needed

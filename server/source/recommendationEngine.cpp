@@ -5,8 +5,8 @@
 #include "database.h"
 RecommendationEngine::RecommendationEngine(Database *database):database(database){}
 std::vector<FoodItem> RecommendationEngine::getRecommendations(const std::vector<FeedbackDetails> &feedbacks) {
-    std::unordered_map<int, int> ratingSums;  // food_item_id -> sum of ratings
-    std::unordered_map<int, int> ratingCounts;  // food_item_id -> count of ratings
+    std::unordered_map<int, int> ratingSums;  
+    std::unordered_map<int, int> ratingCounts;  
 
     for (const auto &feedback : feedbacks) {
         
@@ -29,7 +29,6 @@ std::vector<FoodItem> RecommendationEngine::getRecommendations(const std::vector
 
     std::vector<FoodItem> recommendations;
     for (const auto &iterator : avgRatings) {
-        // Fetch food item from database using foodItemId (entry.first)
         FoodItem item = fetchFoodItemById(iterator.first);
         item.setRating(iterator.second);
         recommendations.push_back(item);
@@ -58,5 +57,5 @@ FoodItem RecommendationEngine::fetchFoodItemById(int foodItemId) {
     } catch (sql::SQLException &e) {
         std::cerr << "MySQL error: " << e.what() << std::endl;
     }
-    return FoodItem("", 0.0);  // Return an empty item if not found
+    return FoodItem("", 0.0);  
 }

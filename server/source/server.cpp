@@ -129,6 +129,10 @@ bool Server::addEmployeeToDatabase(Employee employee)
     }
     return false;
 }
+void Server::clearRecommendationTable(){
+    std::unique_ptr<sql::PreparedStatement> pstmt(userDatabase->getConnection()->prepareStatement(
+            "DELETE FROM RECOMMENDATIONS"));
+}
 bool Server::addRecommendationToDatabase(const FoodItem &item) {
     try {
         std::cout<<"Adding data to data base"<<std::endl;
@@ -151,8 +155,6 @@ bool Server::addRecommendationToDatabase(const FoodItem &item) {
 
 void Server::initializeDatabase()
 {
-    // Initializing a simple user database
-
     std::unique_ptr<sql::Statement> stmt(userDatabase->getConnection()->createStatement());
     stmt->execute("CREATE TABLE IF NOT EXISTS EMPLOYEES ("
                   "employee_id VARCHAR(255) PRIMARY KEY, "
@@ -310,23 +312,28 @@ void Server::handleClient()
             }
         }
         else if (command == "VIEW_MENU")
-        {
-            std::cout << "Viewing menu" << std::endl;
-            auto foodItems = fetchFoodItemsFromDatabase();
-            Json::Value jsonData;
-            for (const auto &item : foodItems)
-            {
-                Json::Value jsonItem;
-                jsonItem["food_item_id"] = item.getFoodItemId();
-                jsonItem["food_item_name"] = item.getFoodItemName();
-                jsonItem["price"] = item.getPrice();
-                jsonItem["availability"] = item.checkAvailability();
-                jsonItem["rating"] = item.getRating();
-                jsonData.append(jsonItem);
-            }
-            Json::StreamWriterBuilder writer;
-            response = Json::writeString(writer, jsonData);
-        }
+{
+    std::cout << "Viewing menu" << std::endl;
+    auto foodItems = fetchFoodItemsFromDatabase();
+
+    std::string responseData;
+    for (const auto &item : foodItems)
+    {
+        responseData += std::to_string(item.getFoodItemId()) + ";"
+                     + item.getFoodItemName() + ";"
+                     + std::to_string(item.getPrice()) + ";"
+                     + (item.checkAvailability() ? "1" : "0") + ";"
+                     + std::to_string(item.getRating()) + "|";
+    }
+    
+    // Remove the last pipe delimiter
+    if (!responseData.empty()) {
+        responseData.pop_back();
+    }
+
+    response = responseData;
+}
+
         else if (command == "DELETE_FOOD_ITEM")
         {
             std::cout << "Deleting food item" << std::endl;
@@ -410,6 +417,8 @@ else if (command == "STORE_RECOMMENDATIONS") {
 
     std::istringstream recommendationsStream(recommendationsStr);
     std::string recommendation;
+
+    clearRecommendationTable();
     while (std::getline(recommendationsStream, recommendation, '|')) {
         std::istringstream recommendationStream(recommendation);
         std::string token;
@@ -418,9 +427,7 @@ else if (command == "STORE_RECOMMENDATIONS") {
         while (std::getline(recommendationStream, token, ';')) {
             fields.push_back(token);
         }
-        
-    std::cout<<"hello"<<std::endl;
-    std::cout<<token<<std::endl;
+    
             FoodItem foodItem(fields[1], std::stod(fields[2]));
             foodItem.setFoodItemId(std::stoi(fields[0]));
             foodItem.setAvailability(fields[3] == "1");
@@ -486,7 +493,10 @@ bool Server::addFoodItemToDatabase(const FoodItem &foodItem)
 }
 void Server::run()
 {
-    listen_for_connections();
+    listen_for_connections();;
+    while(true){
     accept_connection();
-    handleClient();
+    std::thread clientRequestThread(&Server::handleClient,this);
+    clientRequestThread.detach();
+    }
 }

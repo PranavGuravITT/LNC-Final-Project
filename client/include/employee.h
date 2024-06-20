@@ -14,9 +14,7 @@ class Employee{
     std::string getEmployeeId();
     std::string getEmployeeName();
     std::string getPassword();
-
-    bool login();
-    void placeOrder();
+    void viewNotifications();
     void giveFeedback();
 };
 #endif

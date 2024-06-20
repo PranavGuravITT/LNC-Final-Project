@@ -1,5 +1,3 @@
-
-
 #ifndef SERVER_HPP
 #define SERVER_HPP
 
@@ -14,12 +12,14 @@
 #include <netinet/in.h>
 #include <unistd.h>
 #include <vector>
+#include <jsoncpp/json/value.h>
+#include <jsoncpp/json/json.h>
+#include <thread>
 #include "foodItem.h"
 #include "employee.h"
 #include "feedback.h"
+#include "server.h"
 #include "recommendationEngine.h"
-#include <jsoncpp/json/value.h>
-#include <jsoncpp/json/json.h>
 
 class Server {
 public:
@@ -53,6 +53,7 @@ private:
     std::vector<FeedbackDetails> fetchFeedbacksFromDatabase();
     bool addRecommendationToDatabase(const FoodItem &item);
     std::vector<FoodItem> fetchRecommendationsFromDatabase();
+    void clearRecommendationTable();
 };
 
 #endif

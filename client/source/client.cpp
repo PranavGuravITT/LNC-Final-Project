@@ -53,67 +53,61 @@ void Client::sendFeedback()
     std::cout << "Response from server: " << buffer << std::endl;
 }
 
-void Client::getRecommendations()
-{
+void Client::getRecommendations() {
     std::string message = "GET_RECOMMENDATIONS";
-
     send(clientSocket, message.c_str(), message.length(), 0);
     std::cout << "Recommendation request sent\n";
 
     char buffer[bufferSize] = {0};
     read(clientSocket, buffer, bufferSize);
 
-    std::string responseStr(buffer);
-    std::cout << "Recommendations received:\n";
+    std::string response(buffer);
 
-    std::istringstream recommendationsStream(responseStr);
+    std::istringstream recommendationsStream(response);
     std::string recommendation;
-    int count = 0;
-    std::ostringstream recommendationsToSend;
+    std::vector<std::string> recommendations;
+    while (std::getline(recommendationsStream, recommendation, '|')) {
+        recommendations.push_back(recommendation);
+    }
 
-    while (std::getline(recommendationsStream, recommendation, '|') && count < 5)
-    {
-        std::istringstream recommendationStream(recommendation);
+    std::cout << "Recommendations received:\n";
+    for (const auto &rec : recommendations) {
+        std::istringstream recommendationStream(rec);
         std::string token;
-
         std::vector<std::string> fields;
-        while (std::getline(recommendationStream, token, ';'))
-        {
+        while (std::getline(recommendationStream, token, ';')) {
             fields.push_back(token);
         }
 
-        if (fields.size() == 5)
-        {
+        if (fields.size() == 5) {
             std::cout << "Food Item: " << fields[1] << "\n";
-            std::cout << "Price: " << std::stod(fields[2]) << "\n";
-            std::cout << "Rating: " << std::stoi(fields[4]) << "\n";
+            std::cout << "Price: " << fields[2] << "\n";
+            std::cout << "Rating: " << fields[4] << "\n";
             std::cout << "Availability: " << (fields[3] == "1" ? "Yes" : "No") << "\n";
             std::cout << "------------------\n";
-
-            recommendationsToSend << fields[0] << ";" << fields[1] << ";" << std::stod(fields[2]) << ";" << (fields[3] == "1" ? "Yes" : "No") << ";" << std::stoi(fields[4]);
-            recommendationsToSend << "|";
-
-            count++;
         }
     }
 
-    storeRecommendations(recommendationsToSend.str());
+    // Store only the first 5 elements in the database
+    storeRecommendations(recommendations);
 }
 
-void Client::storeRecommendations(const std::string &recommendationsStr)
-{
-    std::cout << "Received String to store: " << recommendationsStr << std::endl;
+void Client::storeRecommendations( std::vector<std::string> recommendations) {
+    std::string message = "STORE_RECOMMENDATIONS\n";
+    int count = 0;
+    for (const auto &rec : recommendations) {
+        if (count >= 5) break;
+        message += rec + "|";
+        count++;
+    }
 
-    std::string message = "STORE_RECOMMENDATIONS:" + recommendationsStr;
-    std::cout << message << std::endl;
+    if (!message.empty() && message.back() == '|') {
+        message.pop_back();  // Remove the last '|'
+    }
 
     send(clientSocket, message.c_str(), message.length(), 0);
-    std::cout << "Store recommendations request sent\n";
-
-    char buffer[bufferSize] = {0};
-    read(clientSocket, buffer, bufferSize);
-    std::cout << "Response from server: " << buffer << std::endl;
 }
+
 
 bool Client::authenticate(const std::string &userId, const std::string &password)
 {
@@ -168,6 +162,7 @@ void Client::adminScreen()
             std::cout << "5. DELETE FOOD ITEM" << std::endl;
             std::cout << "6. ADD FEEDDBACK" << std::endl;
             std::cout << "7. RECOMMENDATION ENGINE" << std::endl;
+            std::cout << "8. BACK" << std::endl;
             std::cin >> choice;
             std::string request;
             switch (choice)
@@ -182,7 +177,7 @@ void Client::adminScreen()
                 break;
             case '3':
                 request = admin.viewMenuRequest();
-                getMenuDataRequestToServer(request);
+                viewMenuRequestToServer(request);
                 break;
             case '4':
                 request = admin.deleteEmployeeRequest();
@@ -198,6 +193,8 @@ void Client::adminScreen()
             case '7':
                 getRecommendations();
                 break;
+            case '8':
+                return;
             default:
                 break;
             }
@@ -207,45 +204,59 @@ void Client::adminScreen()
 
 void Client::chefScreen()
 {
-    Admin admin("CHF_1", "admin", "Admin123");
+    Chef chef("CHF_1", "chef", "Chef123");
+    std::string userId, password;
+    std::cout << "Enter User ID: ";
+    std::cin >> userId;
+    std::cout << "Enter Password: ";
+    std::cin >> password;
+    if (authenticate(userId, password) && userId == "CHF_1")
+    {
     while (1)
     {
         char choice;
 
         std::cout << "\n\n----------WELCOME CHEF-------------" << std::endl;
         std::cout << "\n-------OPERATIONS-----" << std::endl;
-        std::cout << "1. ADD EMPLOYEE" << std::endl;
-        std::cout << "2. ADD FOOD ITEM" << std::endl;
+        std::cout << "1.ROLL OUT MENU" << std::endl;
+        std::cout << "2. ADD FOOD ITEM TO DAILY MENU" << std::endl;
         std::cout << "3. VIEW MENU" << std::endl;
+        std::cout << "4. BACK" << std::endl;
         std::cin >> choice;
+
+        std::string request;
         switch (choice)
         {
-        // case '1':
-
-        //     break;
-        // case '2':
-        //     storeFoodItem();
-        //     break;
-        // case '3':
-        //     viewMenu();
-        //     break;
+        case '1':
+            chef.rollOutMenuForNextDay();
+            break;
+        case '2':
+           request = chef.viewMenuRequest();
+           viewMenuRequestToServer(request);
+            break;
+        case '3':
+            chef.viewResponseFromEmployees();
+            break;
+        case '4':
+            return;
+            break;
         default:
             break;
         }
+    }
     }
 }
 
 void Client::employeeScreen()
 {
+    std::cout << "\n\n----------WELCOME EMPLOYEE------------" << std::endl;
     while (1)
     {
         char choice;
-
-        std::cout << "\n\n----------WELCOME EMPLOYEE------------" << std::endl;
         std::cout << "\n-------OPERATIONS-----" << std::endl;
-        std::cout << "1. ADD EMPLOYEE" << std::endl;
-        std::cout << "2. ADD FOOD ITEM" << std::endl;
-        std::cout << "3. EMPLOYEE" << std::endl;
+        std::cout << "1. VOTE FOR FOOD ITEM" << std::endl;
+        std::cout << "2. CHECK NOTIFICATIONS" << std::endl;
+        std::cout << "3. GIVE FEEDBACK" << std::endl;
         std::cin >> choice;
         switch (choice)
         {
@@ -261,7 +272,7 @@ void Client::employeeScreen()
     }
 }
 
-void Client::getMenuDataRequestToServer(const std::string &message)
+void Client::viewMenuRequestToServer(const std::string &message)
 {
     send(clientSocket, message.c_str(), message.length(), 0);
     std::cout << "View menu request sent\n";
@@ -270,24 +281,30 @@ void Client::getMenuDataRequestToServer(const std::string &message)
     read(clientSocket, buffer, bufferSize);
     std::string response(buffer);
 
-    Json::CharReaderBuilder reader;
-    Json::Value jsonData;
-    std::string errors;
-    std::istringstream stream(response);
-    if (Json::parseFromStream(reader, stream, &jsonData, &errors))
-    {
-        std::cout << "\n\nMenu List:\n";
-        for (const auto &item : jsonData)
-        {
-            std::cout << "ID: " << item["food_item_id"].asInt()
-                      << "\tName: " << item["food_item_name"].asString()
-                      << "\t\tPrice: " << item["price"].asDouble()
-                      << "\tAvailability: " << (item["availability"].asBool() ? "Yes" : "No") << "\n";
-        }
+    std::cout << "Hello " << response << std::endl;
+
+    std::istringstream menuStream(response);
+    std::string menuItem;
+    std::vector<std::string> menuItems;
+    while (std::getline(menuStream, menuItem, '|')) {
+        menuItems.push_back(menuItem);
     }
-    else
-    {
-        std::cerr << "Failed to parse the menu: " << errors << std::endl;
+
+    std::cout << "\n\nMenu List:\n";
+    for (const auto &item : menuItems) {
+        std::istringstream itemStream(item);
+        std::string token;
+        std::vector<std::string> fields;
+        while (std::getline(itemStream, token, ';')) {
+            fields.push_back(token);
+        }
+
+        if (fields.size() == 5) {
+            std::cout << "ID: " << fields[0]
+                      << "\tName: " << fields[1]
+                      << "\t\tPrice: " << fields[2]
+                      << "\tAvailability: " << (fields[3] == "1" ? "Yes" : "No") << "\n";
+        }
     }
 }
 
@@ -312,14 +329,11 @@ void Client::run()
             chefScreen();
             break;
         case '3':
-        std::cout << "Enter User ID: ";
-        std::cin >> userId;
-        std::cout << "Enter Password: ";
-        std::cin >> password;
-        if(authenticate(userId, password)){
-            employeeScreen();
-        }
-            break;
+
+        // if(authenticate(userId, password)){
+        //     employeeScreen();
+        // }
+        //     break;
         default:
             break;
         }

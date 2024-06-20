@@ -11,9 +11,10 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
-#include "admin.h"
 #include <jsoncpp/json/value.h>
 #include <jsoncpp/json/json.h>
+#include "admin.h"
+#include "chef.h"
 class Client {
 public:
     Client(const std::string& server_address, int port);
@@ -31,13 +32,13 @@ private:
     void connect_to_server();
     bool authenticate(const std::string& user_id, const std::string& password);
     void sendRequestToServer(const std::string& message);
-    void getMenuDataRequestToServer(const std::string& message);
+    void viewMenuRequestToServer(const std::string& message);
     void adminScreen();
     void chefScreen();
     void employeeScreen();
     void sendFeedback();
     void getRecommendations();
-    void storeRecommendations(const std::string &recommendationsStr);
+    void storeRecommendations(std::vector<std::string> recommendations);
 };
 
 #endif

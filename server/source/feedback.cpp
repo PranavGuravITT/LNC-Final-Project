@@ -1,7 +1,7 @@
 #include "feedback.h"
 
-FeedbackDetails::FeedbackDetails(int foodItemId, std::string userId, int rating)
-    : foodItemId(foodItemId), userId(userId), rating(rating), feedbackId(0) {}
+FeedbackDetails::FeedbackDetails(int foodItemId, std::string userId, int rating,std::string cmt)
+    : foodItemId(foodItemId), userId(userId), rating(rating), feedbackId(0),comment(cmt) {}
 
 // Getters
 int FeedbackDetails::getFeedbackId() const

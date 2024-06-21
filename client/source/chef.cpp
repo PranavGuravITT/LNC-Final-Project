@@ -14,6 +14,10 @@ std::string Chef::rollOutMenuForNextDay() {
  return message;
 }
 
+std::string Chef::getReccommendationRequest(){
+  std::string message = "GET_RECOMMENDATIONS";
+  return message;
+}
 
 std::string Chef::viewMenuRequest() {
     std::string message = "VIEW_MENU";

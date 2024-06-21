@@ -12,7 +12,7 @@ private:
     std::string comment;
 
 public:
-    FeedbackDetails(int foodItemId, std::string userId, int rating);
+    FeedbackDetails(int foodItemId, std::string userId, int rating, std::string cmt);
 
     // Getters
     int getFeedbackId() const;

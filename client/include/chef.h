@@ -15,6 +15,7 @@ public:
     std::string rollOutMenuForNextDay();
     std::string viewMenuRequest();
     void viewResponseFromEmployees();
+   std::string getReccommendationRequest();
 
     std::string getChefId() const;
     std::string getPassword() const;

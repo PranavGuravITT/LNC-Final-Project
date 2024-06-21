@@ -15,6 +15,7 @@
 #include <jsoncpp/json/json.h>
 #include "admin.h"
 #include "chef.h"
+#include "employee.h"
 class Client {
 public:
     Client(const std::string& server_address, int port);
@@ -37,8 +38,10 @@ private:
     void chefScreen();
     void employeeScreen();
     void sendFeedback();
-    void getRecommendations();
+    void getRecommendations(std::string message);
     void storeRecommendations(std::vector<std::string> recommendations);
+    void rollOutDailyMenuRequestToServer(const std::string& message);
+    void viewDailyMenuRequestToServer();
 };
 
 #endif

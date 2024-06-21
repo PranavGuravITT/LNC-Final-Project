@@ -20,6 +20,7 @@
 #include "feedback.h"
 #include "server.h"
 #include "recommendationEngine.h"
+#include "dailyMenu.h"
 
 class Server {
 public:
@@ -54,6 +55,7 @@ private:
     bool addRecommendationToDatabase(const FoodItem &item);
     std::vector<FoodItem> fetchRecommendationsFromDatabase();
     void clearRecommendationTable();
+    std::vector<DailyMenu> fetchDailyMenuFromDatabase();
 };
 
 #endif

@@ -23,14 +23,14 @@ public:
     void run();
 
 private:
-    std::string server_address_;
-    int port_;
+    std::string serverAddress;
+    int port;
     int clientSocket;
-    struct sockaddr_in server_addr_;
+    struct sockaddr_in address;
     const int bufferSize = 1024;
 
-    void create_socket();
-    void connect_to_server();
+    void createSocket();
+    void connectToServer();
     bool authenticate(const std::string& user_id, const std::string& password);
     void sendRequestToServer(const std::string& message);
     void viewMenuRequestToServer(const std::string& message);
@@ -38,6 +38,7 @@ private:
     void chefScreen();
     void employeeScreen();
     void sendFeedback();
+    void viewMenu(std::string& response);
     void getRecommendations(std::string message);
     void storeRecommendations(std::vector<std::string> recommendations);
     void rollOutDailyMenuRequestToServer(const std::string& message);

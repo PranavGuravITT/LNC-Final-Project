@@ -1,11 +1,9 @@
 #include "foodItem.h"
 
-// Constructor
 FoodItem::FoodItem() = default;
 FoodItem::FoodItem(const std::string& sname, double price)
     : foodItemName(sname), price(price), availability(true), rating(0), foodItemId(0) {}
 
-// Getters
 std::string FoodItem::getFoodItemName() const {
     return foodItemName;
 }
@@ -26,7 +24,6 @@ int FoodItem::getFoodItemId() const {
     return foodItemId;
 }
 
-// Setters
 void FoodItem::setAvailability(bool availability) {
     this->availability = availability;
 }

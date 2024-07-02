@@ -29,33 +29,34 @@ public:
     void run();
 
 private:
-    int port_;
-    int server_fd_;
-    int client_socket_;
-    struct sockaddr_in address_;
-    int addrlen_;
-    const int buffer_size_ = 1024;
+    int port;
+    int serverFD;
+    int clientSocket;
+    struct sockaddr_in address;
+    int addressLength;
+    const int bufferSize = 1024;
     std::unordered_map<std::string, std::string> user_db_;
     Database *userDatabase;
 
-    void create_socket();
-    void bind_socket();
-    void listen_for_connections();
-    void accept_connection();
+    void createSocket();
+    void bindSocket();
+    void listenForConnections();
+    void acceptConnection();
     void handleClient();
-    bool validate_user(const std::string& user_id, const std::string& password);
+    bool validateUser(const std::string& userId, const std::string& password);
     void initializeDatabase();
     bool addFoodItemToDatabase(const FoodItem &foodItem); 
     bool addEmployeeToDatabase(Employee employee);
     std::vector<FoodItem> fetchFoodItemsFromDatabase();
     bool deleteFoodItemFromDatabase(int foodItemId);
-    bool deleteUserFromDatabase(const std::string &user_id);
+    bool deleteUserFromDatabase(const std::string &userId);
     bool addFeedbackToDatabase(const FeedbackDetails &feedback);
     std::vector<FeedbackDetails> fetchFeedbacksFromDatabase();
     bool addRecommendationToDatabase(const FoodItem &item);
     std::vector<FoodItem> fetchRecommendationsFromDatabase();
     void clearRecommendationTable();
     std::vector<DailyMenu> fetchDailyMenuFromDatabase();
+    void clearDailyMenuTable();
 };
 
 #endif

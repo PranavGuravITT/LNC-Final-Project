@@ -1,4 +1,3 @@
-
 #include "server.h"
 #include "feedback.h"
 
@@ -28,68 +27,68 @@ std::vector<FeedbackDetails> Server::fetchFeedbacksFromDatabase()
     return feedbacks;
 }
 
-Server::Server(int port, Database *database) : port_(port), userDatabase(database), server_fd_(0), client_socket_(0), addrlen_(sizeof(address_))
+Server::Server(int port, Database *database) : port(port), userDatabase(database), serverFD(0), clientSocket(0), addressLength(sizeof(address))
 {
-    memset(&address_, 0, sizeof(address_));
-    create_socket();
-    bind_socket();
+    memset(&address, 0, sizeof(address));
+    createSocket();
+    bindSocket();
     initializeDatabase();
 }
 
 Server::~Server()
 {
-    close(client_socket_);
-    close(server_fd_);
+    close(clientSocket);
+    close(serverFD);
 }
 
-void Server::create_socket()
+void Server::createSocket()
 {
-    if ((server_fd_ = socket(AF_INET, SOCK_STREAM, 0)) == 0)
+    if ((serverFD = socket(AF_INET, SOCK_STREAM, 0)) == 0)
     {
         perror("Socket creation failed");
         exit(EXIT_FAILURE);
     }
 }
 
-void Server::bind_socket()
+void Server::bindSocket()
 {
-    int opt = 1;
-    if (setsockopt(server_fd_, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt)))
+    int option = 1;
+    if (setsockopt(serverFD, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &option, sizeof(option)))
     {
         perror("Setsockopt failed");
         exit(EXIT_FAILURE);
     }
 
-    address_.sin_family = AF_INET;
-    address_.sin_addr.s_addr = INADDR_ANY;
-    address_.sin_port = htons(port_);
+    address.sin_family = AF_INET;
+    address.sin_addr.s_addr = INADDR_ANY;
+    address.sin_port = htons(port);
 
-    if (bind(server_fd_, (struct sockaddr *)&address_, sizeof(address_)) < 0)
+    if (bind(serverFD, (struct sockaddr *)&address, sizeof(address)) < 0)
     {
         perror("Bind failed");
         exit(EXIT_FAILURE);
     }
 }
 
-void Server::listen_for_connections()
+void Server::listenForConnections()
 {
-    if (listen(server_fd_, 3) < 0)
+    if (listen(serverFD, 3) < 0)
     {
         perror("Listen failed");
         exit(EXIT_FAILURE);
     }
 }
 
-void Server::accept_connection()
+void Server::acceptConnection()
 {
-    if ((client_socket_ = accept(server_fd_, (struct sockaddr *)&address_, (socklen_t *)&addrlen_)) < 0)
+    if ((clientSocket = accept(serverFD, (struct sockaddr *)&address, (socklen_t *)&addressLength)) < 0)
     {
         perror("Accept failed");
         exit(EXIT_FAILURE);
     }
 }
 
-bool Server::validate_user(const std::string &user_id, const std::string &password)
+bool Server::validateUser(const std::string &userId, const std::string &password)
 {
 
     try
@@ -97,14 +96,14 @@ bool Server::validate_user(const std::string &user_id, const std::string &passwo
         std::unique_ptr<sql::PreparedStatement> pstmt(
             userDatabase->getConnection()->prepareStatement("SELECT password FROM EMPLOYEES WHERE employee_id = ?"));
 
-        pstmt->setString(1, user_id);
+        pstmt->setString(1, userId);
         std::unique_ptr<sql::ResultSet> res(pstmt->executeQuery());
 
         if (res->next())
         {
-            std::string db_password = res->getString("password");
-            std::cout << db_password << std::endl;
-            return db_password == password;
+            std::string storedPassword = res->getString("password");
+            std::cout << storedPassword << std::endl;
+            return storedPassword == password;
         }
     }
     catch (sql::SQLException &e)
@@ -135,6 +134,13 @@ void Server::clearRecommendationTable()
     std::cout << "Clear table" << std::endl;
     std::unique_ptr<sql::PreparedStatement> pstmt(userDatabase->getConnection()->prepareStatement(
         "DELETE FROM RECOMMENDATIONS"));
+}
+
+void Server::clearDailyMenuTable()
+{
+    std::cout << "Clear table" << std::endl;
+    std::unique_ptr<sql::PreparedStatement> pstmt(userDatabase->getConnection()->prepareStatement(
+        "DELETE FROM DAILY_MENU"));
 }
 bool Server::addRecommendationToDatabase(const FoodItem &item)
 {
@@ -209,25 +215,31 @@ void Server::initializeDatabase()
                   "END;");
 }
 
-std::vector<DailyMenu> Server::fetchDailyMenuFromDatabase() {
+std::vector<DailyMenu> Server::fetchDailyMenuFromDatabase()
+{
     std::vector<DailyMenu> dailyMenu;
 
-    try {
-std::unique_ptr<sql::Statement> stmt(userDatabase->getConnection()->createStatement());        std::unique_ptr<sql::ResultSet> res(stmt->executeQuery(
+    try
+    {
+        std::unique_ptr<sql::Statement> stmt(userDatabase->getConnection()->createStatement());
+        std::unique_ptr<sql::ResultSet> res(stmt->executeQuery(
             "SELECT dm.menu_date, dm.item_id, r.food_item_name, r.price,r.rating "
             "FROM DAILY_MENU dm "
             "JOIN RECOMMENDATIONS r ON dm.item_id = r.food_item_id"));
 
-        while (res->next()) {
+        while (res->next())
+        {
             DailyMenu menu;
             menu.menuDate = res->getString("menu_date");
             menu.itemId = res->getInt("item_id");
             menu.foodItemName = res->getString("food_item_name");
-            menu.price=res->getDouble("price");
+            menu.price = res->getDouble("price");
             menu.rating = res->getInt("rating");
             dailyMenu.push_back(menu);
         }
-    } catch (sql::SQLException &e) {
+    }
+    catch (sql::SQLException &e)
+    {
         std::cerr << "MySQL error: " << e.what() << std::endl;
     }
 
@@ -283,12 +295,12 @@ bool Server::deleteFoodItemFromDatabase(int foodItemId)
     }
     return false;
 }
-bool Server::deleteUserFromDatabase(const std::string &user_id)
+bool Server::deleteUserFromDatabase(const std::string &userId)
 {
     try
     {
         std::unique_ptr<sql::PreparedStatement> pstmt(userDatabase->getConnection()->prepareStatement("DELETE FROM EMPLOYEES WHERE employee_id = ?"));
-        pstmt->setString(1, user_id);
+        pstmt->setString(1, userId);
         pstmt->execute();
         return true;
     }
@@ -301,10 +313,10 @@ bool Server::deleteUserFromDatabase(const std::string &user_id)
 
 void Server::handleClient()
 {
-    char buffer[buffer_size_] = {0};
+    char buffer[bufferSize] = {0};
     while (true)
     {
-        read(client_socket_, buffer, buffer_size_);
+        read(clientSocket, buffer, bufferSize);
         std::string request(buffer);
         std::cout << "Request " << request << std::endl;
         std::istringstream ss(request);
@@ -322,7 +334,7 @@ void Server::handleClient()
             std::getline(ss, userId, ':');
             std::getline(ss, password, ':');
             std::cout << userId << "  " << password << std::endl;
-            if (validate_user(userId, password))
+            if (validateUser(userId, password))
             {
                 response = "success";
             }
@@ -379,7 +391,6 @@ void Server::handleClient()
                 responseData += std::to_string(item.getFoodItemId()) + ";" + item.getFoodItemName() + ";" + std::to_string(item.getPrice()) + ";" + (item.checkAvailability() ? "1" : "0") + ";" + std::to_string(item.getRating()) + "|";
             }
 
-            // Remove the last pipe delimiter
             if (!responseData.empty())
             {
                 responseData.pop_back();
@@ -405,9 +416,9 @@ void Server::handleClient()
         else if (command == "DELETE_USER")
         {
             std::cout << "Deleting user" << std::endl;
-            std::string user_id;
-            std::getline(ss, user_id, ':');
-            if (deleteUserFromDatabase(user_id))
+            std::string userId;
+            std::getline(ss, userId, ':');
+            if (deleteUserFromDatabase(userId))
             {
                 response = "User deleted successfully";
             }
@@ -418,7 +429,7 @@ void Server::handleClient()
         }
         else if (command == "ADD_FEEDBACK")
         {
-            std::string employeeId,comment;
+            std::string employeeId, comment;
             int foodItemId, rating;
             std::getline(ss, employeeId, ':');
             ss >> foodItemId;
@@ -428,8 +439,8 @@ void Server::handleClient()
             std::getline(ss, comment, ':');
 
             std::cout << "Adding feedback" << std::endl;
-            std::cout << employeeId << "  " << rating << "  " << foodItemId << "  " << comment<< std::endl;
-            FeedbackDetails feedback(foodItemId, employeeId, rating,comment);
+            std::cout << employeeId << "  " << rating << "  " << foodItemId << "  " << comment << std::endl;
+            FeedbackDetails feedback(foodItemId, employeeId, rating, comment);
             std::cout << "Adding feedback2" << std::endl;
             if (addFeedbackToDatabase(feedback))
             {
@@ -501,6 +512,7 @@ void Server::handleClient()
             RecommendationEngine engine(userDatabase);
             auto recommendationFoodItems = engine.getRecommendations(feedbacks);
 
+            clearDailyMenuTable();
             for (const auto &item : recommendationFoodItems)
             {
                 try
@@ -510,7 +522,7 @@ void Server::handleClient()
                         "INSERT INTO DAILY_MENU (item_id) VALUES (?)"));
 
                     pstmt->setInt(1, item.getFoodItemId());
-                    pstmt->execute(); // Execute the prepared statement
+                    pstmt->execute(); 
                 }
                 catch (sql::SQLException &e)
                 {
@@ -523,7 +535,6 @@ void Server::handleClient()
         else if (command == "VIEW_DAILY_MENU")
         {
 
-           
             std::cout << "Viewing daily menu" << std::endl;
             auto dailyMenuItems = fetchDailyMenuFromDatabase();
 
@@ -546,11 +557,11 @@ void Server::handleClient()
             response = "Unknown command";
         }
 
-        send(client_socket_, response.c_str(), response.length(), 0);
+        send(clientSocket, response.c_str(), response.length(), 0);
         std::cout << "Response sent: " << response << std::endl;
 
         // Clear buffer for next read
-        memset(buffer, 0, buffer_size_);
+        memset(buffer, 0, bufferSize);
     }
 }
 
@@ -594,11 +605,10 @@ bool Server::addFoodItemToDatabase(const FoodItem &foodItem)
 }
 void Server::run()
 {
-    listen_for_connections();
-    ;
+    listenForConnections();
     while (true)
     {
-        accept_connection();
+        acceptConnection();
         std::thread clientRequestThread(&Server::handleClient, this);
         clientRequestThread.detach();
     }

@@ -1,12 +1,12 @@
 
 #include "client.h"
 
-Client::Client(const std::string &server_address, int port)
-    : server_address_(server_address), port_(port), clientSocket(0)
+Client::Client(const std::string &serverAddress, int port)
+    : serverAddress(serverAddress), port(port), clientSocket(0)
 {
-    memset(&server_addr_, 0, sizeof(server_addr_));
-    create_socket();
-    connect_to_server();
+    memset(&address, 0, sizeof(address));
+    createSocket();
+    connectToServer();
 }
 
 Client::~Client()
@@ -14,7 +14,7 @@ Client::~Client()
     close(clientSocket);
 }
 
-void Client::create_socket()
+void Client::createSocket()
 {
     if ((clientSocket = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
@@ -23,18 +23,18 @@ void Client::create_socket()
     }
 }
 
-void Client::connect_to_server()
+void Client::connectToServer()
 {
-    server_addr_.sin_family = AF_INET;
-    server_addr_.sin_port = htons(port_);
+    address.sin_family = AF_INET;
+    address.sin_port = htons(port);
 
-    if (inet_pton(AF_INET, server_address_.c_str(), &server_addr_.sin_addr) <= 0)
+    if (inet_pton(AF_INET, serverAddress.c_str(), &address.sin_addr) <= 0)
     {
         perror("Invalid address/Address not supported");
         exit(EXIT_FAILURE);
     }
 
-    if (connect(clientSocket, (struct sockaddr *)&server_addr_, sizeof(server_addr_)) < 0)
+    if (connect(clientSocket, (struct sockaddr *)&address, sizeof(address)) < 0)
     {
         perror("Connection failed");
         exit(EXIT_FAILURE);
@@ -174,17 +174,7 @@ void Client::rollOutDailyMenuRequestToServer(const std::string &message)
     std::cout << response << std::endl;
 }
 
-void Client::viewDailyMenuRequestToServer()
-{
-    std::string message = "VIEW_DAILY_MENU";
-    send(clientSocket, message.c_str(), message.length(), 0);
-    std::cout << "Roll Out menu request sent\n";
-
-    char buffer[bufferSize] = {0};
-    read(clientSocket, buffer, bufferSize);
-
-    std::string response(buffer);
-
+void Client::viewMenu(std::string& response){
     std::istringstream menuStream(response);
     std::string menuItem;
     std::vector<std::string> menuItems;
@@ -214,6 +204,20 @@ void Client::viewDailyMenuRequestToServer()
     }
 }
 
+void Client::viewDailyMenuRequestToServer()
+{
+    std::string message = "VIEW_DAILY_MENU";
+    send(clientSocket, message.c_str(), message.length(), 0);
+    std::cout << "Roll Out menu request sent\n";
+
+    char buffer[bufferSize] = {0};
+    read(clientSocket, buffer, bufferSize);
+
+    std::string response(buffer);
+
+    viewMenu(response);
+}
+
 void Client::adminScreen()
 {
     Admin admin("ADM_1", "admin", "Admin123");
@@ -236,9 +240,7 @@ void Client::adminScreen()
             std::cout << "3. VIEW MENU" << std::endl;
             std::cout << "4. DELETE USER" << std::endl;
             std::cout << "5. DELETE FOOD ITEM" << std::endl;
-            std::cout << "6. ADD FEEDDBACK" << std::endl;
-            std::cout << "7. RECOMMENDATION ENGINE" << std::endl;
-            std::cout << "8. BACK" << std::endl;
+            std::cout << "8. LOG OUT" << std::endl;
             std::cin >> choice;
             std::string request;
             switch (choice)
@@ -266,9 +268,7 @@ void Client::adminScreen()
             case '6':
                 sendFeedback();
                 break;
-            case '7':
-                getRecommendations("GET_RECOMMENDATIONS");
-                break;
+
             case '8':
                 return;
             default:
@@ -303,15 +303,18 @@ void Client::chefScreen()
             switch (choice)
             {
             case '1':
+                getRecommendations("GET_RECOMMENDATIONS");
+                break;
+            case '2':
                 request = chef.rollOutMenuForNextDay();
                 rollOutDailyMenuRequestToServer(request);
 
                 break;
-            case '2':
+            case '3':
                 request = chef.viewMenuRequest();
                 viewMenuRequestToServer(request);
                 break;
-            case '3':
+            case '4':
                 return;
             default:
                 break;
@@ -416,10 +419,6 @@ void Client::run()
             break;
         case '3':
             employeeScreen();
-        // if(authenticate(userId, password)){
-        //     employeeScreen();
-        // }
-        //     break;
         default:
             break;
         }

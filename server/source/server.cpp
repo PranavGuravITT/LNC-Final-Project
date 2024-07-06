@@ -189,6 +189,11 @@ void Server::initializeDatabase()
                   "FOREIGN KEY (food_item_id) REFERENCES FOOD_ITEMS(food_item_id) ON DELETE CASCADE, "
                   "FOREIGN KEY (employee_id) REFERENCES EMPLOYEES(employee_id) ON DELETE CASCADE)");
 
+    stmt->execute("CREATE TABLE IF NOT EXISTS VOTES ("
+                  "food_item_id INT PRIMARY KEY, "
+                  "count_of_votes INT NOT NULL, "
+                  "FOREIGN KEY (food_item_id) REFERENCES FOOD_ITEMS(food_item_id) ON DELETE CASCADE)");
+
     stmt->execute("CREATE TABLE IF NOT EXISTS RECOMMENDATIONS ("
                   "id INT AUTO_INCREMENT PRIMARY KEY, "
                   "food_item_id INT NOT NULL, "
@@ -213,6 +218,13 @@ void Server::initializeDatabase()
                   "SET NEW.menu_date = CURRENT_DATE(); "
                   "END IF; "
                   "END;");
+    stmt->execute("CREATE TABLE IF NOT EXISTS EMPLOYEE_PROFILES ("
+    "profile_id INT AUTO_INCREMENT PRIMARY KEY,"
+    "employee_id VARCHAR(255) UNIQUE,"
+    "food_preference ENUM('Vegetarian', 'Non Vegetarian', 'Eggetarian'),"
+    "spice_level ENUM('High', 'Medium', 'Low'),"
+    "cuisine_preference ENUM('North Indian', 'South Indian', 'Other'),"
+    "sweet_tooth BOOLEAN)");
 }
 
 std::vector<DailyMenu> Server::fetchDailyMenuFromDatabase()
@@ -246,15 +258,6 @@ std::vector<DailyMenu> Server::fetchDailyMenuFromDatabase()
     return dailyMenu;
 }
 
-// std::string formatDailyMenuAsString(const std::vector<DailyMenu> &dailyMenu) {
-//     std::ostringstream oss;
-
-//     for (const auto &menu : dailyMenu) {
-//         oss << menu.itemId << "," << menu.foodItemName<< "," << menu.rating << "\n";
-//     }
-
-//     return oss.str();
-// }
 std::vector<FoodItem> Server::fetchFoodItemsFromDatabase()
 {
     std::vector<FoodItem> foodItems;
@@ -279,6 +282,28 @@ std::vector<FoodItem> Server::fetchFoodItemsFromDatabase()
     }
     return foodItems;
 }
+bool Server::createEmployeeProfile(const std::string& employeeId, const std::string& foodPreference,
+                                   const std::string& spiceLevel, const std::string& cuisinePreference,
+                                   const std::string& hasSweetTooth) {
+    try {
+        std::unique_ptr<sql::PreparedStatement> pstmt(userDatabase->getConnection()->prepareStatement(
+            "INSERT INTO EMPLOYEE_PROFILES (employee_id, food_preference, spice_level, cuisine_preference, sweet_tooth) "
+            "VALUES (?, ?, ?, ?, ?)"));
+
+        pstmt->setString(1, employeeId);
+        pstmt->setString(2, foodPreference);
+        pstmt->setString(3, spiceLevel);
+        pstmt->setString(4, cuisinePreference);
+        pstmt->setString(5, hasSweetTooth);
+
+        pstmt->execute();
+        return true;
+    } catch (sql::SQLException &e) {
+        std::cerr << "MySQL error: " << e.what() << std::endl;
+    }
+    return false;
+}
+
 
 bool Server::deleteFoodItemFromDatabase(int foodItemId)
 {
@@ -295,6 +320,40 @@ bool Server::deleteFoodItemFromDatabase(int foodItemId)
     }
     return false;
 }
+bool Server::incrementVoteCount(int foodItemId)
+{
+    try
+    {
+        std::unique_ptr<sql::PreparedStatement> checkStmt(userDatabase->getConnection()->prepareStatement(
+            "SELECT count_of_votes FROM VOTES WHERE food_item_id = ?"));
+        checkStmt->setInt(1, foodItemId);
+        std::unique_ptr<sql::ResultSet> res(checkStmt->executeQuery());
+
+        if (res->next())
+        {
+            int currentCount = res->getInt("count_of_votes");
+            std::unique_ptr<sql::PreparedStatement> updateStmt(userDatabase->getConnection()->prepareStatement(
+                "UPDATE VOTES SET count_of_votes = ? WHERE food_item_id = ?"));
+            updateStmt->setInt(1, currentCount + 1);
+            updateStmt->setInt(2, foodItemId);
+            updateStmt->execute();
+        }
+        else
+        {
+            std::unique_ptr<sql::PreparedStatement> insertStmt(userDatabase->getConnection()->prepareStatement(
+                "INSERT INTO VOTES (food_item_id, count_of_votes) VALUES (?, 1)"));
+            insertStmt->setInt(1, foodItemId);
+            insertStmt->execute();
+        }
+        return true;
+    }
+    catch (sql::SQLException &e)
+    {
+        std::cerr << "MySQL error: " << e.what() << std::endl;
+    }
+    return false;
+}
+
 bool Server::deleteUserFromDatabase(const std::string &userId)
 {
     try
@@ -465,7 +524,6 @@ void Server::handleClient()
                 responseData += std::to_string(item.getFoodItemId()) + ";" + item.getFoodItemName() + ";" + std::to_string(item.getPrice()) + ";" + (item.checkAvailability() ? "1" : "0") + ";" + std::to_string(item.getRating()) + "|";
             }
 
-            // Remove the last pipe delimiter
             if (!responseData.empty())
             {
                 responseData.pop_back();
@@ -473,12 +531,26 @@ void Server::handleClient()
 
             response = responseData;
         }
+        else if (command == "INCREMENT_VOTE")
+        {
+            std::cout << "Incrementing vote count" << std::endl;
+            int foodItemId;
+            ss >> foodItemId;
+            if (incrementVoteCount(foodItemId))
+            {
+                response = "Vote count incremented successfully";
+            }
+            else
+            {
+                response = "Failed to increment vote count";
+            }
+        }
         else if (command == "STORE_RECOMMENDATIONS")
         {
             std::string recommendationsStr;
             std::getline(ss, recommendationsStr);
 
-            std::cout << "Received String: " << recommendationsStr << std::endl; // Debug print
+            std::cout << "Received String: " << recommendationsStr << std::endl; 
 
             std::istringstream recommendationsStream(recommendationsStr);
             std::string recommendation;
@@ -512,7 +584,7 @@ void Server::handleClient()
             RecommendationEngine engine(userDatabase);
             auto recommendationFoodItems = engine.getRecommendations(feedbacks);
 
-            clearDailyMenuTable();
+            // clearDailyMenuTable();
             for (const auto &item : recommendationFoodItems)
             {
                 try
@@ -531,6 +603,35 @@ void Server::handleClient()
             }
 
             response = "success";
+        }
+        else if (command == "UPDATE_PROFILE")
+        {
+            std::string userId;
+            std::getline(ss, userId, ':');
+
+            std::string profileAnswers;
+            std::getline(ss, profileAnswers);
+
+            std::istringstream profileStream(profileAnswers);
+            std::string answer;
+            std::vector<std::string> answers;
+            while (std::getline(profileStream, answer, ':'))
+            {
+                answers.push_back(answer);
+            }
+
+            // Example: Extract answers and update employee profile in the database
+            // Modify as per your database schema and update logic
+            // Here, assume updating the profile based on received answers
+            std::string foodPreference = answers[0]; // Example: "Vegetarian"
+            std::string spiceLevel = answers[1];      // Example: "High"
+            std::string cuisinePreference = answers[2]; // Example: "North Indian"
+            std::string sweetTooth = answers[3];       // Example: "Yes"
+
+            createEmployeeProfile(userId,foodPreference,spiceLevel,cuisinePreference,sweetTooth);
+            // pstmt->execute();
+
+            response = "Profile updated successfully"; // Adjust response as needed
         }
         else if (command == "VIEW_DAILY_MENU")
         {

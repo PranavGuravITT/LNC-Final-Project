@@ -1,12 +1,9 @@
 #include "employee.h"
 
-// Constructor
 Employee::Employee(std::string empId, const std::string& empName, const std::string& pwd)
     : employeeId(empId), employeeName(empName), password(pwd) {
-    // Initialize any other necessary data members
 }
 
-// Getters
 std::string Employee::getEmployeeId() {
     return employeeId;
 }

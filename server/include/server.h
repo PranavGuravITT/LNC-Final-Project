@@ -57,6 +57,10 @@ private:
     void clearRecommendationTable();
     std::vector<DailyMenu> fetchDailyMenuFromDatabase();
     void clearDailyMenuTable();
+    bool incrementVoteCount(int foodItemId);
+    bool createEmployeeProfile(const std::string& employeeId, const std::string& foodPreference,
+                                   const std::string& spiceLevel, const std::string& cuisinePreference,
+                                   const std::string& hasSweetTooth);
 };
 
 #endif

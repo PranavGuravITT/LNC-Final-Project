@@ -126,7 +126,7 @@ void Client::storeRecommendations(std::vector<std::string> recommendations)
 
     if (!message.empty() && message.back() == '|')
     {
-        message.pop_back(); // Remove the last '|'
+        message.pop_back(); 
     }
 
     send(clientSocket, message.c_str(), message.length(), 0);
@@ -135,7 +135,20 @@ void Client::storeRecommendations(std::vector<std::string> recommendations)
     char buffer[bufferSize] = {0};
     read(clientSocket, buffer, bufferSize);
 }
+void Client::voteForFoodItem()
+{
+    int foodItemId;
+    std::cout << "Enter Food Item ID to vote for: ";
+    std::cin >> foodItemId;
 
+    std::string message = "INCREMENT_VOTE:" + std::to_string(foodItemId);
+    send(clientSocket, message.c_str(), message.length(), 0);
+    std::cout << "Vote sent\n";
+
+    char buffer[bufferSize] = {0};
+    read(clientSocket, buffer, bufferSize);
+    std::cout << "Response from server: " << buffer << std::endl;
+}
 bool Client::authenticate(const std::string &userId, const std::string &password)
 {
     bool status = false;
@@ -233,8 +246,7 @@ void Client::adminScreen()
             char choice;
 
             std::cout << "\n\n----------WELCOME ADMIN-------------" << std::endl;
-            std::cout << "\n-------OPERATIONS-----\n"
-                      << std::endl;
+            std::cout << "\n------------OPERATIONS------------------\n"<< std::endl;
             std::cout << "1. ADD EMPLOYEE" << std::endl;
             std::cout << "2. ADD FOOD ITEM" << std::endl;
             std::cout << "3. VIEW MENU" << std::endl;
@@ -294,9 +306,10 @@ void Client::chefScreen()
 
             std::cout << "\n\n----------WELCOME CHEF-------------" << std::endl;
             std::cout << "\n-------OPERATIONS-----" << std::endl;
-            std::cout << "1.ROLL OUT MENU" << std::endl;
-            std::cout << "2.VIEW MENU" << std::endl;
-            std::cout << "3.LOG OUT" << std::endl;
+            std::cout << "1.GET RECOMMENDATIONS" << std::endl;
+            std::cout << "2.ROLL OUT MENU" << std::endl;
+            std::cout << "3.VIEW MENU" << std::endl;
+            std::cout << "4.LOG OUT" << std::endl;
             std::cin >> choice;
 
             std::string request;
@@ -308,7 +321,6 @@ void Client::chefScreen()
             case '2':
                 request = chef.rollOutMenuForNextDay();
                 rollOutDailyMenuRequestToServer(request);
-
                 break;
             case '3':
                 request = chef.viewMenuRequest();
@@ -340,7 +352,8 @@ void Client::employeeScreen()
             std::cout << "\n-------OPERATIONS-----" << std::endl;
             std::cout << "1.VIEW DAILY MENU" << std::endl;
             std::cout << "2.GIVE FEEDBACK" << std::endl;
-            std::cout << "3.LOG OUT" << std::endl;
+            std::cout << "3.VOTE " << std::endl;
+            std::cout << "4.LOG OUT" << std::endl;
             std::cin >> choice;
 
             std::string request;
@@ -352,6 +365,11 @@ void Client::employeeScreen()
             case '2':
                 sendFeedback();
                 break;
+            case '3':
+               voteForFoodItem();
+                break;
+            case '4':
+                return;
             default:
                 break;
             }

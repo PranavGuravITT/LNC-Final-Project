@@ -43,6 +43,7 @@ private:
     void storeRecommendations(std::vector<std::string> recommendations);
     void rollOutDailyMenuRequestToServer(const std::string& message);
     void viewDailyMenuRequestToServer();
+    void voteForFoodItem();
 };
 
 #endif

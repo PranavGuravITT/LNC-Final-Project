@@ -216,6 +216,16 @@ void Client::viewMenu(std::string& response){
         std::cout << "Vote " << std::endl;
     }
 }
+void Client:: createProfileRequestToServer(){
+    std::string message = "CREATE_PROFILE:EMP_1:Vegetarian:High:North Indian:Yes";
+    send(clientSocket, message.c_str(), message.length(), 0);
+    std::cout << "create profile request sent\n";
+
+    char buffer[bufferSize] = {0};
+    read(clientSocket, buffer, bufferSize);
+
+    std::string response(buffer);
+}
 
 void Client::viewDailyMenuRequestToServer()
 {
@@ -353,7 +363,8 @@ void Client::employeeScreen()
             std::cout << "1.VIEW DAILY MENU" << std::endl;
             std::cout << "2.GIVE FEEDBACK" << std::endl;
             std::cout << "3.VOTE " << std::endl;
-            std::cout << "4.LOG OUT" << std::endl;
+            std::cout << "4.CREATE PROFILE " << std::endl;
+            std::cout << "5.LOG OUT" << std::endl;
             std::cin >> choice;
 
             std::string request;
@@ -369,6 +380,8 @@ void Client::employeeScreen()
                voteForFoodItem();
                 break;
             case '4':
+                createProfileRequestToServer();
+            case '5':
                 return;
             default:
                 break;

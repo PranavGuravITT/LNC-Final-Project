@@ -174,11 +174,14 @@ void Server::initializeDatabase()
                   "password VARCHAR(255) NOT NULL)");
 
     stmt->execute("CREATE TABLE IF NOT EXISTS FOOD_ITEMS ("
-                  "food_item_id INT AUTO_INCREMENT PRIMARY KEY, "
-                  "food_item_name VARCHAR(100) NOT NULL, "
-                  "price DOUBLE NOT NULL, "
-                  "availability BOOLEAN NOT NULL, "
-                  "rating INT DEFAULT 0)");
+              "food_item_id INT AUTO_INCREMENT PRIMARY KEY, "
+              "food_item_name VARCHAR(100) NOT NULL, "
+              "price DOUBLE NOT NULL, "
+              "availability BOOLEAN NOT NULL, "
+              "rating INT DEFAULT 0, "
+              "food_type ENUM('Vegetarian', 'Non Vegetarian', 'Eggetarian') NOT NULL, "
+              "cuisine_type ENUM('North Indian', 'South Indian', 'Other') NOT NULL, "
+              "spice_level ENUM('High', 'Medium', 'Low') NOT NULL)");
 
     stmt->execute("CREATE TABLE IF NOT EXISTS FEEDBACK ("
                   "feedback_id INT AUTO_INCREMENT PRIMARY KEY, "
@@ -218,13 +221,16 @@ void Server::initializeDatabase()
                   "SET NEW.menu_date = CURRENT_DATE(); "
                   "END IF; "
                   "END;");
+
     stmt->execute("CREATE TABLE IF NOT EXISTS EMPLOYEE_PROFILES ("
-    "profile_id INT AUTO_INCREMENT PRIMARY KEY,"
-    "employee_id VARCHAR(255) UNIQUE,"
-    "food_preference ENUM('Vegetarian', 'Non Vegetarian', 'Eggetarian'),"
-    "spice_level ENUM('High', 'Medium', 'Low'),"
-    "cuisine_preference ENUM('North Indian', 'South Indian', 'Other'),"
-    "sweet_tooth BOOLEAN)");
+              "profile_id INT AUTO_INCREMENT PRIMARY KEY, "
+              "employee_id VARCHAR(255) UNIQUE, "
+              "food_preference ENUM('Vegetarian', 'Non Vegetarian', 'Eggetarian'), "
+              "spice_level ENUM('High', 'Medium', 'Low'), "
+              "cuisine_preference ENUM('North Indian', 'South Indian', 'Other'), "
+              "sweet_tooth ENUM('No', 'Yes'), "
+              "FOREIGN KEY (employee_id) REFERENCES EMPLOYEES(employee_id) ON DELETE CASCADE)");
+
 }
 
 std::vector<DailyMenu> Server::fetchDailyMenuFromDatabase()
@@ -604,7 +610,7 @@ void Server::handleClient()
 
             response = "success";
         }
-        else if (command == "UPDATE_PROFILE")
+        else if (command == "CREATE_PROFILE")
         {
             std::string userId;
             std::getline(ss, userId, ':');

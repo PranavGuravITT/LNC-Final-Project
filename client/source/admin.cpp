@@ -10,11 +10,17 @@ std::string Admin::addFoodItemToMenuRequest()
     double price;
     std::string foodItemName;
     std::string message;
+    std::string foodType;
+    std::string cuisineType;
     std::cout << "Enter Food Item Name: ";
     std::cin >> foodItemName;
     std::cout << "Enter Price ";
     std::cin >> price;
-    message = "ADD_FOOD_ITEM:" + foodItemName + ":" + std::to_string(price);
+    std::cout << "Enter Food Type ";
+    std::cin >> foodType;
+    std::cout << "Enter Cuisine Type ";
+    std::cin >> cuisineType;
+    message = "ADD_FOOD_ITEM:" + foodItemName + ":" + std::to_string(price)+ ":" + foodType + cuisineType;
     return message;
 }
 std::string Admin::addEmployeeRequest()

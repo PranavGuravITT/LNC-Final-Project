@@ -44,6 +44,7 @@ private:
     void rollOutDailyMenuRequestToServer(const std::string& message);
     void viewDailyMenuRequestToServer();
     void voteForFoodItem();
+    void createProfileRequestToServer();
 };
 
 #endif

@@ -174,14 +174,13 @@ void Server::initializeDatabase()
                   "password VARCHAR(255) NOT NULL)");
 
     stmt->execute("CREATE TABLE IF NOT EXISTS FOOD_ITEMS ("
-              "food_item_id INT AUTO_INCREMENT PRIMARY KEY, "
-              "food_item_name VARCHAR(100) NOT NULL, "
-              "price DOUBLE NOT NULL, "
-              "availability BOOLEAN NOT NULL, "
-              "rating INT DEFAULT 0, "
-              "food_type ENUM('Vegetarian', 'Non Vegetarian', 'Eggetarian') NOT NULL, "
-              "cuisine_type ENUM('North Indian', 'South Indian', 'Other') NOT NULL, "
-              "spice_level ENUM('High', 'Medium', 'Low') NOT NULL)");
+                  "food_item_id INT AUTO_INCREMENT PRIMARY KEY, "
+                  "food_item_name VARCHAR(100) NOT NULL, "
+                  "price DOUBLE NOT NULL, "
+                  "availability BOOLEAN NOT NULL, "
+                  "food_type ENUM('Vegetarian', 'NonVegetarian', 'Eggetarian') NOT NULL, "
+                  "cuisine_type ENUM('NorthIndian', 'SouthIndian', 'Other') NOT NULL, "
+                  "spice_level ENUM('High', 'Medium', 'Low') NOT NULL)");
 
     stmt->execute("CREATE TABLE IF NOT EXISTS FEEDBACK ("
                   "feedback_id INT AUTO_INCREMENT PRIMARY KEY, "
@@ -223,14 +222,18 @@ void Server::initializeDatabase()
                   "END;");
 
     stmt->execute("CREATE TABLE IF NOT EXISTS EMPLOYEE_PROFILES ("
-              "profile_id INT AUTO_INCREMENT PRIMARY KEY, "
-              "employee_id VARCHAR(255) UNIQUE, "
-              "food_preference ENUM('Vegetarian', 'Non Vegetarian', 'Eggetarian'), "
-              "spice_level ENUM('High', 'Medium', 'Low'), "
-              "cuisine_preference ENUM('North Indian', 'South Indian', 'Other'), "
-              "sweet_tooth ENUM('No', 'Yes'), "
-              "FOREIGN KEY (employee_id) REFERENCES EMPLOYEES(employee_id) ON DELETE CASCADE)");
+                  "profile_id INT AUTO_INCREMENT PRIMARY KEY, "
+                  "employee_id VARCHAR(255) UNIQUE, "
+                  "food_preference ENUM('Vegetarian', 'Non Vegetarian', 'Eggetarian'), "
+                  "spice_level ENUM('High', 'Medium', 'Low'), "
+                  "cuisine_preference ENUM('North Indian', 'South Indian', 'Other'), "
+                  "sweet_tooth ENUM('No', 'Yes'), "
+                  "FOREIGN KEY (employee_id) REFERENCES EMPLOYEES(employee_id) ON DELETE CASCADE)");
 
+    stmt->execute("CREATE TABLE IF NOT EXISTS NOTIFICATIONS ("
+                  "notification_id INT AUTO_INCREMENT PRIMARY KEY, "
+                  "message VARCHAR(255) NOT NULL, "
+                  "recipient VARCHAR(255) NOT NULL)");
 }
 
 std::vector<DailyMenu> Server::fetchDailyMenuFromDatabase()
@@ -278,7 +281,6 @@ std::vector<FoodItem> Server::fetchFoodItemsFromDatabase()
             item.setFoodItemName(res->getString("food_item_name"));
             item.setPrice(res->getDouble("price"));
             item.setAvailability(res->getBoolean("availability"));
-            item.setRating(res->getInt("rating"));
             foodItems.push_back(item);
         }
     }
@@ -288,10 +290,12 @@ std::vector<FoodItem> Server::fetchFoodItemsFromDatabase()
     }
     return foodItems;
 }
-bool Server::createEmployeeProfile(const std::string& employeeId, const std::string& foodPreference,
-                                   const std::string& spiceLevel, const std::string& cuisinePreference,
-                                   const std::string& hasSweetTooth) {
-    try {
+bool Server::createEmployeeProfile(const std::string &employeeId, const std::string &foodPreference,
+                                   const std::string &spiceLevel, const std::string &cuisinePreference,
+                                   const std::string &hasSweetTooth)
+{
+    try
+    {
         std::unique_ptr<sql::PreparedStatement> pstmt(userDatabase->getConnection()->prepareStatement(
             "INSERT INTO EMPLOYEE_PROFILES (employee_id, food_preference, spice_level, cuisine_preference, sweet_tooth) "
             "VALUES (?, ?, ?, ?, ?)"));
@@ -304,12 +308,13 @@ bool Server::createEmployeeProfile(const std::string& employeeId, const std::str
 
         pstmt->execute();
         return true;
-    } catch (sql::SQLException &e) {
+    }
+    catch (sql::SQLException &e)
+    {
         std::cerr << "MySQL error: " << e.what() << std::endl;
     }
     return false;
 }
-
 
 bool Server::deleteFoodItemFromDatabase(int foodItemId)
 {
@@ -376,6 +381,35 @@ bool Server::deleteUserFromDatabase(const std::string &userId)
     return false;
 }
 
+void Server::sendNotificationToChef(const std::string& message) {
+    // Logic to send notification to chef
+    // For example, insert into NOTIFICATIONS table
+    try {
+        std::unique_ptr<sql::PreparedStatement> pstmt(userDatabase->getConnection()->prepareStatement(
+            "INSERT INTO NOTIFICATIONS (message, recipient) VALUES (?, 'chef')"));
+
+        pstmt->setString(1, message);
+        pstmt->execute();
+    } catch (sql::SQLException &e) {
+        std::cerr << "MySQL error: " << e.what() << std::endl;
+    }
+}
+
+std::string Server::checkNotificationsForChef() {
+    std::string notifications;
+    try {
+        std::unique_ptr<sql::Statement> stmt(userDatabase->getConnection()->createStatement());
+        std::unique_ptr<sql::ResultSet> res(stmt->executeQuery("SELECT message FROM NOTIFICATIONS WHERE recipient = 'chef'"));
+
+        while (res->next()) {
+            notifications += res->getString("message") + "\n";
+        }
+    } catch (sql::SQLException &e) {
+        std::cerr << "MySQL error: " << e.what() << std::endl;
+    }
+    return notifications;
+}
+
 void Server::handleClient()
 {
     char buffer[bufferSize] = {0};
@@ -432,19 +466,31 @@ void Server::handleClient()
         {
             std::cout << "Adding food item" << std::endl;
             double price;
-            std::string food_name;
-            std::getline(ss, food_name, ':');
+            bool availability;
+            std::string foodName, foodType, cuisineType, spiceLevel;
+            std::getline(ss, foodName, ':');
             ss >> price;
-            FoodItem foodItem(food_name, price);
-            if (addFoodItemToDatabase(foodItem))
-            {
+            ss.ignore(); 
+            std::getline(ss, foodType, ':');
+            std::getline(ss, cuisineType, ':');
+            std::getline(ss, spiceLevel, ':');
+
+            FoodItem foodItem;
+            foodItem.setFoodItemName(foodName);
+            foodItem.setPrice(price);
+            foodItem.setFoodType(foodType);
+            foodItem.setCuisineType(cuisineType);
+            foodItem.setSpiceLevel(spiceLevel);
+            foodItem.setAvailability(true);
+
+            if (addFoodItemToDatabase(foodItem)) {
                 response = "Food item added successfully";
-            }
-            else
-            {
+                sendNotificationToChef("New food item added: " + foodName);
+            } else {
                 response = "Failed to add food item";
             }
         }
+
         else if (command == "VIEW_MENU")
         {
             std::cout << "Viewing menu" << std::endl;
@@ -462,6 +508,9 @@ void Server::handleClient()
             }
 
             response = responseData;
+        }
+        else if (command == "CHECK_NOTIFICATIONS") {
+        response = checkNotificationsForChef();
         }
 
         else if (command == "DELETE_FOOD_ITEM")
@@ -556,7 +605,7 @@ void Server::handleClient()
             std::string recommendationsStr;
             std::getline(ss, recommendationsStr);
 
-            std::cout << "Received String: " << recommendationsStr << std::endl; 
+            std::cout << "Received String: " << recommendationsStr << std::endl;
 
             std::istringstream recommendationsStream(recommendationsStr);
             std::string recommendation;
@@ -600,7 +649,7 @@ void Server::handleClient()
                         "INSERT INTO DAILY_MENU (item_id) VALUES (?)"));
 
                     pstmt->setInt(1, item.getFoodItemId());
-                    pstmt->execute(); 
+                    pstmt->execute();
                 }
                 catch (sql::SQLException &e)
                 {
@@ -626,15 +675,12 @@ void Server::handleClient()
                 answers.push_back(answer);
             }
 
-            // Example: Extract answers and update employee profile in the database
-            // Modify as per your database schema and update logic
-            // Here, assume updating the profile based on received answers
-            std::string foodPreference = answers[0]; // Example: "Vegetarian"
-            std::string spiceLevel = answers[1];      // Example: "High"
+            std::string foodPreference = answers[0];    // Example: "Vegetarian"
+            std::string spiceLevel = answers[1];        // Example: "High"
             std::string cuisinePreference = answers[2]; // Example: "North Indian"
-            std::string sweetTooth = answers[3];       // Example: "Yes"
+            std::string sweetTooth = answers[3];        // Example: "Yes"
 
-            createEmployeeProfile(userId,foodPreference,spiceLevel,cuisinePreference,sweetTooth);
+            createEmployeeProfile(userId, foodPreference, spiceLevel, cuisinePreference, sweetTooth);
             // pstmt->execute();
 
             response = "Profile updated successfully"; // Adjust response as needed
@@ -695,12 +741,15 @@ bool Server::addFoodItemToDatabase(const FoodItem &foodItem)
 {
     try
     {
-        std::unique_ptr<sql::PreparedStatement> pstmt(userDatabase->getConnection()->prepareStatement("INSERT INTO FOOD_ITEMS (food_item_name, price, availability, rating) VALUES (?, ?, ?, ?)"));
+        std::unique_ptr<sql::PreparedStatement> pstmt(userDatabase->getConnection()->prepareStatement(
+            "INSERT INTO FOOD_ITEMS (food_item_name, price, availability, food_type, cuisine_type, spice_level) VALUES (?, ?, ?, ?, ?, ?)"));
 
         pstmt->setString(1, foodItem.getFoodItemName());
         pstmt->setDouble(2, foodItem.getPrice());
         pstmt->setBoolean(3, foodItem.checkAvailability());
-        pstmt->setInt(4, foodItem.getRating());
+        pstmt->setString(4, foodItem.getFoodType());
+        pstmt->setString(5, foodItem.getCuisineType());
+        pstmt->setString(6, foodItem.getSpiceLevel());
         pstmt->execute();
         return true;
     }
@@ -710,6 +759,7 @@ bool Server::addFoodItemToDatabase(const FoodItem &foodItem)
     }
     return false;
 }
+
 void Server::run()
 {
     listenForConnections();

@@ -5,6 +5,7 @@
 Admin::Admin(const std::string &id, const std::string &name, const std::string &pass)
     : adminId(id), adminName(name), password(pass) {}
 
+
 std::string Admin::addFoodItemToMenuRequest()
 {
     double price;
@@ -12,17 +13,23 @@ std::string Admin::addFoodItemToMenuRequest()
     std::string message;
     std::string foodType;
     std::string cuisineType;
+    std::string spiceLevel;
+
     std::cout << "Enter Food Item Name: ";
     std::cin >> foodItemName;
-    std::cout << "Enter Price ";
+    std::cout << "Enter Price: ";
     std::cin >> price;
-    std::cout << "Enter Food Type ";
+    std::cout << "Enter Food Type: ";
     std::cin >> foodType;
-    std::cout << "Enter Cuisine Type ";
+    std::cout << "Enter Cuisine Type: ";
     std::cin >> cuisineType;
-    message = "ADD_FOOD_ITEM:" + foodItemName + ":" + std::to_string(price)+ ":" + foodType + cuisineType;
+    std::cout << "Enter Spice Level: ";
+    std::cin >> spiceLevel;
+
+    message = "ADD_FOOD_ITEM:" + foodItemName + ":" + std::to_string(price) + ":" + foodType + ":" + cuisineType + ":" + spiceLevel;
     return message;
 }
+
 std::string Admin::addEmployeeRequest()
 {
     std::string id, name, password;

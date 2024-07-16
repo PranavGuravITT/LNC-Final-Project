@@ -19,6 +19,11 @@ std::string Chef::getReccommendationRequest(){
   return message;
 }
 
+std::string Chef::checkNotificationsRequest() {
+    std::string message = "CHECK_NOTIFICATIONS";
+    return message;
+}
+
 std::string Chef::viewMenuRequest() {
     std::string message = "VIEW_MENU";
     return message;

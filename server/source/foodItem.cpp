@@ -1,6 +1,5 @@
 #include "foodItem.h"
 
-// Default constructor
 FoodItem::FoodItem()
     : availability(false), foodItemId(0), rating(0), price(0.0),
       foodItemName(""), foodType(""), cuisineType(""),
@@ -44,26 +43,18 @@ std::string FoodItem::getSpiceLevel() const {
     return spiceLevel;
 }
 
-std::string FoodItem::getHasSweethTooth() const {
-    return hasSweethTooth;
-}
-
-// Setter for availability
 void FoodItem::setAvailability(bool availability) {
     this->availability = availability;
 }
 
-// Setter for foodItemId
 void FoodItem::setFoodItemId(int id) {
     this->foodItemId = id;
 }
 
-// Setter for rating
 void FoodItem::setRating(int rating) {
     this->rating = rating;
 }
 
-// Setter for price
 void FoodItem::setPrice(double price) {
     this->price = price;
 }
@@ -80,12 +71,7 @@ void FoodItem::setCuisineType(const std::string& type) {
     this->cuisineType = type;
 }
 
-// Setter for spiceLevel
 void FoodItem::setSpiceLevel(const std::string& level) {
     this->spiceLevel = level;
 }
 
-// Setter for hasSweethTooth
-void FoodItem::setHasSweethTooth(const std::string& hasSweet) {
-    this->hasSweethTooth = hasSweet;
-}

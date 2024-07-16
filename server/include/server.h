@@ -61,6 +61,8 @@ private:
     bool createEmployeeProfile(const std::string& employeeId, const std::string& foodPreference,
                                    const std::string& spiceLevel, const std::string& cuisinePreference,
                                    const std::string& hasSweetTooth);
+    void sendNotificationToChef(const std::string& message);
+    std::string checkNotificationsForChef();
 };
 
 #endif

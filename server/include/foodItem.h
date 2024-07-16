@@ -20,7 +20,6 @@ public:
     FoodItem();
     FoodItem(const std::string& sname, double price);
 
-    // Getters
     std::string getFoodItemName() const;
     bool checkAvailability() const;
     int getRating() const;
@@ -29,9 +28,7 @@ public:
     std::string getFoodType() const;
     std::string getCuisineType() const;
     std::string getSpiceLevel() const;
-    std::string getHasSweethTooth() const;
 
-    // Setters
     void setAvailability(bool availability);
     void setFoodItemId(int id);
     void setRating(int rating);
@@ -40,7 +37,6 @@ public:
     void setFoodType(const std::string& type);
     void setCuisineType(const std::string& type);
     void setSpiceLevel(const std::string& level);
-    void setHasSweethTooth(const std::string& hasSweet);
 };
 
-#endif // FOODITEM_H
+#endif 

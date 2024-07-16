@@ -68,6 +68,15 @@ void Client::sendFeedback()
     read(clientSocket, buffer, bufferSize);
     std::cout << "Response from server: " << buffer << std::endl;
 }
+void Client::viewNotificationsRequestToServer(const std::string &message)
+{
+    send(clientSocket, message.c_str(), message.length(), 0);
+    std::cout << "Notifications request sent\n";
+
+    char buffer[bufferSize] = {0};
+    read(clientSocket, buffer, bufferSize);
+    std::cout << "Notifications:\n" << buffer << std::endl;
+}
 
 void Client::getRecommendations(std::string message)
 {
@@ -108,7 +117,6 @@ void Client::getRecommendations(std::string message)
         }
     }
 
-    // Store only the first 5 elements in the database
     storeRecommendations(recommendations);
 }
 
@@ -319,7 +327,8 @@ void Client::chefScreen()
             std::cout << "1.GET RECOMMENDATIONS" << std::endl;
             std::cout << "2.ROLL OUT MENU" << std::endl;
             std::cout << "3.VIEW MENU" << std::endl;
-            std::cout << "4.LOG OUT" << std::endl;
+            std::cout << "4.VIEW NOTIFICATIONS" << std::endl;
+            std::cout << "5.LOG OUT" << std::endl;
             std::cin >> choice;
 
             std::string request;
@@ -337,6 +346,9 @@ void Client::chefScreen()
                 viewMenuRequestToServer(request);
                 break;
             case '4':
+                request = chef.checkNotificationsRequest();
+                viewNotificationsRequestToServer(request);
+            case '5':
                 return;
             default:
                 break;

@@ -45,7 +45,10 @@ private:
     void viewDailyMenuRequestToServer();
     void voteForFoodItem();
     void createProfileRequestToServer();
-    void viewNotificationsRequestToServer(const std::string &message)
+    void inputProfileDetails(std::string &employeeId, std::string &dietaryPreference, std::string &spiceLevel, std::string &cuisineType, std::string &hasSweetTooth);
+    void viewNotificationsRequestToServer(const std::string &message);
+    void viewDiscardMenuListRequestToServer();
+    void handleDiscardMenuOptions();
 };
 
 #endif

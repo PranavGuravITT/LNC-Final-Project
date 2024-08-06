@@ -161,7 +161,6 @@ bool Client::authenticate(const std::string &userId, const std::string &password
 {
     bool status = false;
     std::string message = "VALIDATE:" + userId + ":" + password;
-    std::cout << message << std::endl;
     send(clientSocket, message.c_str(), message.length(), 0);
     std::cout << "Authentication request sent\n";
 
@@ -224,22 +223,137 @@ void Client::viewMenu(std::string& response){
         std::cout << "Vote " << std::endl;
     }
 }
-void Client:: createProfileRequestToServer(){
-    std::string message = "CREATE_PROFILE:EMP_1:Vegetarian:High:North Indian:Yes";
+void Client::inputProfileDetails(std::string &employeeId, std::string &dietaryPreference, std::string &spiceLevel, std::string &cuisineType, std::string &hasSweetTooth) {
+    std::cout << "Enter Employee ID: ";
+    std::cin >> employeeId;
+      std::cin.ignore(); 
+    std::cout << "Enter Dietary Preference (Vegetarian, Non Vegetarian, Eggetarian): ";
+    std::getline(std::cin, dietaryPreference);
+    while (dietaryPreference != "Vegetarian" && dietaryPreference != "Non Vegetarian" && dietaryPreference != "Eggetarian") {
+        std::cout << "Invalid input. Enter Dietary Preference (Vegetarian, Non Vegetarian, Eggetarian): ";
+        std::getline(std::cin, dietaryPreference);
+    }
+
+    std::cout << "Enter Spice Level (High, Medium, Low): ";
+    std::getline(std::cin, spiceLevel);
+    while (spiceLevel != "High" && spiceLevel != "Medium" && spiceLevel != "Low") {
+        std::cout << "Invalid input. Enter Spice Level (High, Medium, Low): ";
+        std::getline(std::cin, spiceLevel);
+    }
+
+    std::cout << "Enter Cuisine Type (North Indian, South Indian, Other): ";
+    std::getline(std::cin, cuisineType);
+    while (cuisineType != "North Indian" && cuisineType != "South Indian" && cuisineType != "Other") {
+        std::cout << "Invalid input. Enter Cuisine Type (North Indian, South Indian, Other): ";
+        std::getline(std::cin, cuisineType);
+    }
+
+    std::cout << "Enter Sweet Tooth (Yes, No): ";
+    std::getline(std::cin, hasSweetTooth);
+    while (hasSweetTooth != "Yes" && hasSweetTooth != "No") {
+        std::cout << "Invalid input. Enter Sweet Tooth (Yes, No): ";
+        std::getline(std::cin, hasSweetTooth);
+    }
+}
+
+void Client::createProfileRequestToServer() {
+    std::string employeeId, dietaryPreference, spiceLevel, cuisineType, hasSweetTooth;
+    inputProfileDetails(employeeId, dietaryPreference, spiceLevel, cuisineType, hasSweetTooth);
+
+    std::string message = "CREATE_PROFILE:" + employeeId + ":" + dietaryPreference + ":" + spiceLevel + ":" + cuisineType + ":" + hasSweetTooth;
     send(clientSocket, message.c_str(), message.length(), 0);
-    std::cout << "create profile request sent\n";
+    std::cout << "Create profile request sent\n";
+
+    char buffer[bufferSize] = {0};
+    read(clientSocket, buffer, bufferSize);
+    std::cout << "Response from server: " << buffer << std::endl;
+}
+
+void Client::viewDiscardMenuListRequestToServer() {
+    std::string message = "VIEW_DISCARD_MENU";
+    send(clientSocket, message.c_str(), message.length(), 0);
+    std::cout << "View discard menu list request sent\n";
 
     char buffer[bufferSize] = {0};
     read(clientSocket, buffer, bufferSize);
 
     std::string response(buffer);
+
+    std::istringstream discardStream(response);
+    std::string discardItem;
+    std::vector<std::string> discardItems;
+    while (std::getline(discardStream, discardItem, '|')) {
+        discardItems.push_back(discardItem);
+    }
+
+    std::cout << "\n\nDiscard Menu List:\n";
+    for (const auto &item : discardItems) {
+        std::istringstream itemStream(item);
+        std::string token;
+        std::vector<std::string> fields;
+        while (std::getline(itemStream, token, ':')) {
+            fields.push_back(token);
+        }
+
+        if (fields.size() == 3) {
+            std::cout << "ID: " << fields[0]
+                      << "\tName: " << fields[1]
+                      << "\t\tAverage Rating: " << fields[2] << "\n";
+        }
+    }
+    handleDiscardMenuOptions();
+    
 }
+
+
+
+void Client::handleDiscardMenuOptions() {
+     char choice;
+    std::cout << "1. Remove Food Item from Menu\n";
+    std::cout << "2. Give Feedback\n";
+    std::cout << "3. Back\n";
+    std::cout << "Enter your choice: ";
+    std::cin >> choice;
+    std::cin.ignore(); 
+
+    switch (choice) {
+        case '1': {
+            int foodItemId;
+            std::cout << "Enter Food Item ID to delete: ";
+            std::cin >> foodItemId;
+
+            std::string request = "DELETE_FOOD_ITEM:" + std::to_string(foodItemId);
+            sendRequestToServer(request);
+            break;
+        }
+        case '2': {
+            std::string foodItemName, feedback;
+            std::cout << "Enter Food Item Name to request feedback for: ";
+            std::getline(std::cin, foodItemName);
+            std::string message = "We are trying to improve your experience with " + foodItemName + 
+                                  ". Please provide your feedback and help us.\n" +
+                                  "Q1. What didn’t you like about " + foodItemName + "?\n" +
+                                  "Q2. How would you like " + foodItemName + " to taste?\n" +
+                                  "Q3. Share your mom’s recipe.\n"; 
+            std::getline(std::cin, feedback);
+            std::string request = "REQUEST_FEEDBACK:" + feedback;
+            sendRequestToServer(request);
+            break;
+        }
+        case '3':
+            return;
+        default:
+            std::cout << "Invalid choice. Please try again.\n";
+            break;
+    }
+}
+
+
 
 void Client::viewDailyMenuRequestToServer()
 {
     std::string message = "VIEW_DAILY_MENU";
     send(clientSocket, message.c_str(), message.length(), 0);
-    std::cout << "Roll Out menu request sent\n";
 
     char buffer[bufferSize] = {0};
     read(clientSocket, buffer, bufferSize);
@@ -270,7 +384,8 @@ void Client::adminScreen()
             std::cout << "3. VIEW MENU" << std::endl;
             std::cout << "4. DELETE USER" << std::endl;
             std::cout << "5. DELETE FOOD ITEM" << std::endl;
-            std::cout << "8. LOG OUT" << std::endl;
+            std::cout << "6. VIEW DISCARD MENU LIST" << std::endl;
+            std::cout << "7. LOG OUT" << std::endl;
             std::cin >> choice;
             std::string request;
             switch (choice)
@@ -296,10 +411,9 @@ void Client::adminScreen()
                 sendRequestToServer(request);
                 break;
             case '6':
-                sendFeedback();
+                viewDiscardMenuListRequestToServer();
                 break;
-
-            case '8':
+            case '7':
                 return;
             default:
                 break;
@@ -348,6 +462,7 @@ void Client::chefScreen()
             case '4':
                 request = chef.checkNotificationsRequest();
                 viewNotificationsRequestToServer(request);
+                break;
             case '5':
                 return;
             default:
@@ -360,7 +475,7 @@ void Client::chefScreen()
 void Client::employeeScreen()
 {
     std::cout << "\n\n----------WELCOME EMPLOYEE------------" << std::endl;
-    // Employee employee();
+
     std::string userId, password;
     std::cout << "Enter User ID: ";
     std::cin >> userId;
@@ -393,6 +508,7 @@ void Client::employeeScreen()
                 break;
             case '4':
                 createProfileRequestToServer();
+                break;
             case '5':
                 return;
             default:

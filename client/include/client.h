@@ -49,6 +49,7 @@ private:
     void viewNotificationsRequestToServer(const std::string &message);
     void viewDiscardMenuListRequestToServer();
     void handleDiscardMenuOptions();
+    void requestFeedbackFromServer(const std::string &foodItemName)
 };
 
 #endif

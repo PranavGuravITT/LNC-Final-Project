@@ -16,14 +16,3 @@ std::string Employee::getEmployeeName() {
 std::string Employee::getPassword() {
     return password;
 }
-// std::string Employee::viewDailyMenuRequest(){
-//     std::string message = "VIEW_DAILY_MENU";
-//     return message;
-// }
-
-
-// void Employee::giveFeedback() {
-//     // Implement feedback giving logic here
-//     std::cout << "Giving feedback as employee: " << employeeName << std::endl;
-//     // Additional logic as needed
-// }

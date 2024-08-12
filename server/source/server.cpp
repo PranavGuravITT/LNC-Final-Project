@@ -131,17 +131,31 @@ bool Server::addEmployeeToDatabase(Employee employee)
 }
 void Server::clearRecommendationTable()
 {
-    std::cout << "Clear table" << std::endl;
-    std::unique_ptr<sql::PreparedStatement> pstmt(userDatabase->getConnection()->prepareStatement(
-        "DELETE FROM RECOMMENDATIONS"));
+    std::cout << "Clear Recommendation table" << std::endl;
+    try
+    {
+        std::unique_ptr<sql::Statement> stmt(userDatabase->getConnection()->createStatement());
+        stmt->execute("DELETE FROM RECOMMENDATIONS");
+    }
+    catch (sql::SQLException &e)
+    {
+        std::cerr << "MySQL error: " << e.what() << std::endl;
+    }
 }
 
 void Server::clearDailyMenuTable()
 {
-    std::cout << "Clear table" << std::endl;
-    std::unique_ptr<sql::PreparedStatement> pstmt(userDatabase->getConnection()->prepareStatement(
-        "DELETE FROM DAILY_MENU"));
+    try
+    {
+        std::unique_ptr<sql::Statement> stmt(userDatabase->getConnection()->createStatement());
+        stmt->execute("DELETE FROM DAILY_MENU");
+    }
+    catch (sql::SQLException &e)
+    {
+        std::cerr << "MySQL error: " << e.what() << std::endl;
+    }
 }
+
 bool Server::addRecommendationToDatabase(const FoodItem &item)
 {
     try
@@ -234,12 +248,72 @@ void Server::initializeDatabase()
                   "notification_id INT AUTO_INCREMENT PRIMARY KEY, "
                   "message VARCHAR(255) NOT NULL, "
                   "recipient VARCHAR(255) NOT NULL)");
+
+    stmt->execute("CREATE TABLE IF NOT EXISTS DISCARD_MENU ("
+                  "food_item_id INT PRIMARY KEY, "
+                  "food_item_name VARCHAR(255) NOT NULL, "
+                  "avg_rating DOUBLE NOT NULL, "
+                  "FOREIGN KEY (food_item_id) REFERENCES FOOD_ITEMS(food_item_id) ON DELETE CASCADE)");
+        
+    stmt->execute("CREATE TABLE IF NOT EXISTS FEEDBACK_RESPONSES ("
+                  "response_id INT AUTO_INCREMENT PRIMARY KEY, "
+                  "food_item_name VARCHAR(100) NOT NULL, "
+                  "feedback_text TEXT NOT NULL)");
 }
 
+std::string Server::generateDiscardMenuList()
+{
+    std::ostringstream responseStream;
+    try
+    {
+        std::unique_ptr<sql::Statement> stmt(userDatabase->getConnection()->createStatement());
+        std::unique_ptr<sql::ResultSet> res(stmt->executeQuery(
+            "SELECT F.food_item_id, F.food_item_name, AVG(B.rating) AS avg_rating "
+            "FROM FOOD_ITEMS F "
+            "JOIN FEEDBACK B ON F.food_item_id = B.food_item_id "
+            "GROUP BY F.food_item_id "
+            "HAVING avg_rating < 2"));
+
+        while (res->next())
+        {
+            std::string foodItemId = res->getString("food_item_id");
+            std::string foodItemName = res->getString("food_item_name");
+            double avgRating = res->getDouble("avg_rating");
+
+            responseStream << foodItemId << ":" << foodItemName << ":" << avgRating << "|";
+        }
+    }
+    catch (sql::SQLException &e)
+    {
+        std::cerr << "MySQL error: " << e.what() << std::endl;
+    }
+    return responseStream.str();
+}
+
+void Server::handleDiscardMenuOptions(const std::string &command, const std::string &data) {
+    if (command == "REMOVE_ITEM") {
+        std::string foodItemName;
+        std::cout << "Enter Food Item Name to remove: ";
+        std::getline(std::cin, foodItemName);
+
+        std::unique_ptr<sql::PreparedStatement> pstmt(userDatabase->getConnection()->prepareStatement(
+            "DELETE FROM FOOD_ITEMS WHERE food_item_name = ?"));
+        pstmt->setString(1, foodItemName);
+        pstmt->execute();
+
+        std::cout << "Food item removed from menu.\n";
+    } else if (command == "REQUEST_FEEDBACK") {
+        std::unique_ptr<sql::PreparedStatement> pstmt(userDatabase->getConnection()->prepareStatement(
+            "INSERT INTO FEEDBACK_RESPONSES (food_item_name, feedback_text) VALUES (?, ?)"));
+        pstmt->setString(1, data);
+        pstmt->setString(2, data);
+        pstmt->execute();
+        std::cout << "Feedback received and stored in the database.\n";
+    }
+}
 std::vector<DailyMenu> Server::fetchDailyMenuFromDatabase()
 {
     std::vector<DailyMenu> dailyMenu;
-
     try
     {
         std::unique_ptr<sql::Statement> stmt(userDatabase->getConnection()->createStatement());
@@ -381,33 +455,53 @@ bool Server::deleteUserFromDatabase(const std::string &userId)
     return false;
 }
 
-void Server::sendNotificationToChef(const std::string& message) {
-    // Logic to send notification to chef
-    // For example, insert into NOTIFICATIONS table
-    try {
+void Server::sendNotificationToChef(const std::string &message)
+{
+    try
+    {
         std::unique_ptr<sql::PreparedStatement> pstmt(userDatabase->getConnection()->prepareStatement(
             "INSERT INTO NOTIFICATIONS (message, recipient) VALUES (?, 'chef')"));
 
         pstmt->setString(1, message);
         pstmt->execute();
-    } catch (sql::SQLException &e) {
+    }
+    catch (sql::SQLException &e)
+    {
         std::cerr << "MySQL error: " << e.what() << std::endl;
     }
 }
 
-std::string Server::checkNotificationsForChef() {
+std::string Server::checkNotificationsForChef()
+{
     std::string notifications;
-    try {
+    try
+    {
         std::unique_ptr<sql::Statement> stmt(userDatabase->getConnection()->createStatement());
         std::unique_ptr<sql::ResultSet> res(stmt->executeQuery("SELECT message FROM NOTIFICATIONS WHERE recipient = 'chef'"));
 
-        while (res->next()) {
+        while (res->next())
+        {
             notifications += res->getString("message") + "\n";
         }
-    } catch (sql::SQLException &e) {
+    }
+    catch (sql::SQLException &e)
+    {
         std::cerr << "MySQL error: " << e.what() << std::endl;
     }
     return notifications;
+}
+void Server::fetchFeedback(const std::string &foodItemName) {
+    std::unique_ptr<sql::PreparedStatement> pstmt(userDatabase->getConnection()->prepareStatement(
+        "SELECT feedback_text FROM FEEDBACK_RESPONSES WHERE food_item_name = ?"));
+    pstmt->setString(1, foodItemName);
+    std::unique_ptr<sql::ResultSet> res(pstmt->executeQuery());
+
+    std::string feedbackList;
+    while (res->next()) {
+        feedbackList += res->getString("feedback_text") + "|";
+    }
+
+    send(clientSocket, feedbackList.c_str(), feedbackList.length(), 0);
 }
 
 void Server::handleClient()
@@ -470,7 +564,7 @@ void Server::handleClient()
             std::string foodName, foodType, cuisineType, spiceLevel;
             std::getline(ss, foodName, ':');
             ss >> price;
-            ss.ignore(); 
+            ss.ignore();
             std::getline(ss, foodType, ':');
             std::getline(ss, cuisineType, ':');
             std::getline(ss, spiceLevel, ':');
@@ -483,10 +577,13 @@ void Server::handleClient()
             foodItem.setSpiceLevel(spiceLevel);
             foodItem.setAvailability(true);
 
-            if (addFoodItemToDatabase(foodItem)) {
+            if (addFoodItemToDatabase(foodItem))
+            {
                 response = "Food item added successfully";
                 sendNotificationToChef("New food item added: " + foodName);
-            } else {
+            }
+            else
+            {
                 response = "Failed to add food item";
             }
         }
@@ -509,8 +606,9 @@ void Server::handleClient()
 
             response = responseData;
         }
-        else if (command == "CHECK_NOTIFICATIONS") {
-        response = checkNotificationsForChef();
+        else if (command == "CHECK_NOTIFICATIONS")
+        {
+            response = checkNotificationsForChef();
         }
 
         else if (command == "DELETE_FOOD_ITEM")
@@ -586,6 +684,11 @@ void Server::handleClient()
 
             response = responseData;
         }
+        else if (command == "VIEW_DISCARD_MENU")
+        {
+
+            response = generateDiscardMenuList();
+        }
         else if (command == "INCREMENT_VOTE")
         {
             std::cout << "Incrementing vote count" << std::endl;
@@ -633,32 +736,42 @@ void Server::handleClient()
         }
         else if (command == "ROLL_OUT")
         {
-
             std::cout << "Rolling out Daily food item" << std::endl;
-            auto feedbacks = fetchFeedbacksFromDatabase();
-            RecommendationEngine engine(userDatabase);
-            auto recommendationFoodItems = engine.getRecommendations(feedbacks);
 
-            // clearDailyMenuTable();
-            for (const auto &item : recommendationFoodItems)
+            try
             {
-                try
-                {
-                    std::cout << item.getFoodItemId() << std::endl;
-                    std::unique_ptr<sql::PreparedStatement> pstmt(userDatabase->getConnection()->prepareStatement(
-                        "INSERT INTO DAILY_MENU (item_id) VALUES (?)"));
+                std::unique_ptr<sql::Statement> stmt(userDatabase->getConnection()->createStatement());
+                std::unique_ptr<sql::ResultSet> res(stmt->executeQuery("SELECT food_item_id FROM RECOMMENDATIONS"));
 
-                    pstmt->setInt(1, item.getFoodItemId());
-                    pstmt->execute();
-                }
-                catch (sql::SQLException &e)
+                clearDailyMenuTable();
+
+                while (res->next())
                 {
-                    std::cerr << "MySQL error: " << e.what() << std::endl;
+                    int foodItemId = res->getInt("food_item_id");
+
+                    try
+                    {
+                        std::unique_ptr<sql::PreparedStatement> pstmt(userDatabase->getConnection()->prepareStatement(
+                            "INSERT INTO DAILY_MENU (item_id) VALUES (?)"));
+
+                        pstmt->setInt(1, foodItemId);
+                        pstmt->execute();
+                    }
+                    catch (sql::SQLException &e)
+                    {
+                        std::cerr << "MySQL error: " << e.what() << std::endl;
+                    }
                 }
+
+                response = "success";
             }
-
-            response = "success";
+            catch (sql::SQLException &e)
+            {
+                std::cerr << "MySQL error: " << e.what() << std::endl;
+                response = "failure";
+            }
         }
+
         else if (command == "CREATE_PROFILE")
         {
             std::string userId;
@@ -675,15 +788,14 @@ void Server::handleClient()
                 answers.push_back(answer);
             }
 
-            std::string foodPreference = answers[0];    // Example: "Vegetarian"
-            std::string spiceLevel = answers[1];        // Example: "High"
-            std::string cuisinePreference = answers[2]; // Example: "North Indian"
-            std::string sweetTooth = answers[3];        // Example: "Yes"
+            std::string foodPreference = answers[0];
+            std::string spiceLevel = answers[1];
+            std::string cuisinePreference = answers[2];
+            std::string sweetTooth = answers[3];
 
             createEmployeeProfile(userId, foodPreference, spiceLevel, cuisinePreference, sweetTooth);
-            // pstmt->execute();
 
-            response = "Profile updated successfully"; // Adjust response as needed
+            response = "Profile updated successfully";
         }
         else if (command == "VIEW_DAILY_MENU")
         {
@@ -694,6 +806,7 @@ void Server::handleClient()
             std::string responseData;
             for (const auto &item : dailyMenuItems)
             {
+                std::cout << item.foodItemName << std::endl;
                 responseData += std::to_string(item.itemId) + ";" + item.foodItemName + ";" + std::to_string(item.price) + ";" + std::to_string(item.rating) + "|";
             }
 
@@ -704,7 +817,24 @@ void Server::handleClient()
 
             response = responseData;
         }
-
+        else if (command == "REQUEST_FEEDBACK")
+        {
+            std::string foodItemName,feedback;
+            std::cout << "Feedback REceived ";
+            std::getline(ss, foodItemName, ':');
+            std::getline(ss, feedback, ':');
+            std::unique_ptr<sql::PreparedStatement> pstmt(userDatabase->getConnection()->prepareStatement(
+            "INSERT INTO FEEDBACK_RESPONSES (food_item_name, feedback_text) VALUES (?, ?)"));
+            pstmt->setString(1, foodItemName);
+            pstmt->setString(2, feedback);
+            pstmt->execute();
+            std::cout << "Feedback received and stored in the database.\n";
+        }
+        else if (command == "FETCH_FEEDBACK") {
+        std::string foodItemName;
+        std::getline(stream, foodItemName);
+        fetchFeedback(foodItemName);
+    }
         else
         {
             response = "Unknown command";
@@ -713,7 +843,6 @@ void Server::handleClient()
         send(clientSocket, response.c_str(), response.length(), 0);
         std::cout << "Response sent: " << response << std::endl;
 
-        // Clear buffer for next read
         memset(buffer, 0, bufferSize);
     }
 }

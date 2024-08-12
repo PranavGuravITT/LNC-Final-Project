@@ -63,6 +63,9 @@ private:
                                    const std::string& hasSweetTooth);
     void sendNotificationToChef(const std::string& message);
     std::string checkNotificationsForChef();
+    std::string generateDiscardMenuList() ;
+    void handleDiscardMenuOptions(const std::string &command, const std::string &data);
+    void fetchFeedback(const std::string &foodItemName)
 };
 
 #endif

@@ -43,7 +43,7 @@ FoodItem RecommendationEngine::fetchFoodItemById(int foodItemId)
     try
     {
         std::unique_ptr<sql::PreparedStatement> pstmt(database->getConnection()->prepareStatement(
-            "SELECT food_item_name, price, availability, rating FROM FOOD_ITEMS WHERE food_item_id = ?"));
+            "SELECT food_item_name, price, availability FROM FOOD_ITEMS WHERE food_item_id = ?"));
         pstmt->setInt(1, foodItemId);
         std::unique_ptr<sql::ResultSet> res(pstmt->executeQuery());
 
@@ -54,7 +54,6 @@ FoodItem RecommendationEngine::fetchFoodItemById(int foodItemId)
                 res->getDouble("price"));
             item.setFoodItemId(foodItemId);
             item.setAvailability(res->getBoolean("availability"));
-            item.setRating(res->getInt("rating"));
             return item;
         }
     }

@@ -347,6 +347,27 @@ void Client::handleDiscardMenuOptions() {
             break;
     }
 }
+void Client::requestFeedbackFromServer(const std::string &foodItemName) {
+    std::string message = "FETCH_FEEDBACK:" + foodItemName;
+    send(clientSocket, message.c_str(), message.length(), 0);
+    std::cout << "Feedback request sent\n";
+
+    char buffer[bufferSize] = {0};
+    read(clientSocket, buffer, bufferSize);
+
+    std::string response(buffer);
+    std::istringstream feedbackStream(response);
+    std::string feedbackItem;
+    std::vector<std::string> feedbackList;
+    while (std::getline(feedbackStream, feedbackItem, '|')) {
+        feedbackList.push_back(feedbackItem);
+    }
+
+    std::cout << "\n\nFeedback for " << foodItemName << ":\n";
+    for (const auto &feedback : feedbackList) {
+        std::cout << feedback << "\n";
+    }
+}
 
 
 
@@ -442,7 +463,8 @@ void Client::chefScreen()
             std::cout << "2.ROLL OUT MENU" << std::endl;
             std::cout << "3.VIEW MENU" << std::endl;
             std::cout << "4.VIEW NOTIFICATIONS" << std::endl;
-            std::cout << "5.LOG OUT" << std::endl;
+            std::cout << "5.VIEW FEEDBACKS" << std::endl;
+            std::cout << "6.LOG OUT" << std::endl;
             std::cin >> choice;
 
             std::string request;
@@ -464,6 +486,9 @@ void Client::chefScreen()
                 viewNotificationsRequestToServer(request);
                 break;
             case '5':
+                
+                return;
+            case '6':
                 return;
             default:
                 break;

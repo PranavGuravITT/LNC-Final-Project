@@ -12,8 +12,6 @@
 #include <netinet/in.h>
 #include <unistd.h>
 #include <vector>
-#include <jsoncpp/json/value.h>
-#include <jsoncpp/json/json.h>
 #include <thread>
 #include "foodItem.h"
 #include "employee.h"
@@ -22,7 +20,55 @@
 #include "recommendationEngine.h"
 #include "dailyMenu.h"
 
+#define BUFFER_SIZE 1024
+#define RESPONSE_SUCCESS "success"
+#define RESPONSE_FAILURE "failure"
+
+enum CommandType {
+    VALIDATE,
+    REGISTER_EMPLOYEE,
+    ADD_FOOD_ITEM,
+    VIEW_MENU,
+    CHECK_NOTIFICATIONS,
+    DELETE_FOOD_ITEM,
+    DELETE_USER,
+    ADD_FEEDBACK,
+    GET_RECOMMENDATIONS,
+    VIEW_DISCARD_MENU,
+    INCREMENT_VOTE,
+    STORE_RECOMMENDATIONS,
+    ROLL_OUT,
+    CREATE_PROFILE,
+    VIEW_DAILY_MENU,
+    REQUEST_FEEDBACK,
+    FETCH_FEEDBACK,
+    UNKNOWN_COMMAND
+};
 class Server {
+    public:
+    void handleClient();
+private:
+    CommandType getCommandType(const std::string& command);
+    std::string handleValidateCommand(std::istringstream& ss);
+    std::string handleRegisterEmployeeCommand(std::istringstream& ss);
+    std::string handleAddFoodItemCommand(std::istringstream& ss);
+    std::string handleViewMenuCommand();
+    std::string handleCheckNotificationsCommand();
+    std::string handleDeleteFoodItemCommand(std::istringstream& ss);
+    std::string handleDeleteUserCommand(std::istringstream& ss);
+    std::string handleAddFeedbackCommand(std::istringstream& ss);
+    std::string handleGetRecommendationsCommand();
+    std::string handleViewDiscardMenuCommand();
+    std::string handleIncrementVoteCommand(std::istringstream& ss);
+    std::string handleStoreRecommendationsCommand(std::istringstream& ss);
+    std::string handleRollOutCommand();
+    std::string handleCreateProfileCommand(std::istringstream& ss);
+    std::string handleViewDailyMenuCommand();
+    std::string handleRequestFeedbackCommand(std::istringstream& ss);
+    std::string handleFetchFeedbackCommand(std::istringstream& ss);
+
+    // Add additional private member variables as needed
+    int clientSocket; // Example member variable for client socket
 public:
     Server(int port,Database *database);
     ~Server();
@@ -45,18 +91,7 @@ private:
     void handleClient();
     bool validateUser(const std::string& userId, const std::string& password);
     void initializeDatabase();
-    bool addFoodItemToDatabase(const FoodItem &foodItem); 
-    bool addEmployeeToDatabase(Employee employee);
-    std::vector<FoodItem> fetchFoodItemsFromDatabase();
-    bool deleteFoodItemFromDatabase(int foodItemId);
-    bool deleteUserFromDatabase(const std::string &userId);
-    bool addFeedbackToDatabase(const FeedbackDetails &feedback);
-    std::vector<FeedbackDetails> fetchFeedbacksFromDatabase();
-    bool addRecommendationToDatabase(const FoodItem &item);
-    std::vector<FoodItem> fetchRecommendationsFromDatabase();
-    void clearRecommendationTable();
-    std::vector<DailyMenu> fetchDailyMenuFromDatabase();
-    void clearDailyMenuTable();
+
     bool incrementVoteCount(int foodItemId);
     bool createEmployeeProfile(const std::string& employeeId, const std::string& foodPreference,
                                    const std::string& spiceLevel, const std::string& cuisinePreference,
@@ -65,7 +100,6 @@ private:
     std::string checkNotificationsForChef();
     std::string generateDiscardMenuList() ;
     void handleDiscardMenuOptions(const std::string &command, const std::string &data);
-    void fetchFeedback(const std::string &foodItemName)
 };
 
 #endif

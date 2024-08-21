@@ -3,8 +3,7 @@
 #include <string>
 
 
-Chef::Chef(const std::string& id, const std::string& name, const std::string& password)
-    : chefId(id), chefName(name), password(password) {}
+Chef::Chef(const std::string& id, const std::string& name, const std::string& password) : chefId(id), chefName(name), password(password) {}
 
 
 
@@ -28,11 +27,6 @@ std::string Chef::viewMenuRequest() {
     std::string message = "VIEW_MENU";
     return message;
 }
-
-void Chef::viewResponseFromEmployees(){
-
-}
-
 
 std::string Chef::getChefId() const {
     return chefId;

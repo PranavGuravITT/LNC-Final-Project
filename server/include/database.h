@@ -7,7 +7,9 @@
 #include <cppconn/prepared_statement.h> 
 #include <cppconn/statement.h>
 #include <mysql_driver.h>
-
+#include <vector>
+#include <feedback.h>
+#include <sstream>
 class Database {
 
 private:
@@ -17,6 +19,28 @@ public:
     Database(const std::string& host, const std::string& user, const std::string& password, const std::string& database);
     ~Database();
     sql::Connection* getConnection();
+    bool validateUser(const std::string& userId, const std::string& password);
+    void initializeDatabase();
+    bool addFoodItemToDatabase(const FoodItem &foodItem); 
+    bool addEmployeeToDatabase(Employee employee);
+    std::vector<FoodItem> fetchFoodItemsFromDatabase();
+    std::string fetchNotificationsFromDatabase();
+    bool deleteFoodItemFromDatabase(int foodItemId);
+    bool deleteUserFromDatabase(const std::string &userId);
+    bool addFeedbackToDatabase(const FeedbackDetails &feedback);
+    std::vector<FeedbackDetails> fetchFeedbacksFromDatabase();
+    bool addRecommendationToDatabase(const FoodItem &item);
+    std::vector<FoodItem> fetchRecommendationsFromDatabase();
+    void clearRecommendationTable();
+    std::vector<DailyMenu> fetchDailyMenuFromDatabase();
+    void clearDailyMenuTable();
+    std::string getDiscardMenuList();
+    bool incrementVoteCountInDatabase(int foodItemId);
+    bool storeEmployeeProfileInDatabase(const std::string &employeeId, const std::string &foodPreference,
+                                   const std::string &spiceLevel, const std::string &cuisinePreference,
+                                   const std::string &hasSweetTooth);
+    std::string Database::fetchFeedbackForAnFoodItem(const std::string &foodItemName);
+    bool addFoodItemsToDailyMenu();
 
 };
 

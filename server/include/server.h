@@ -67,14 +67,6 @@ private:
     std::string handleRequestFeedbackCommand(std::istringstream& ss);
     std::string handleFetchFeedbackCommand(std::istringstream& ss);
 
-    // Add additional private member variables as needed
-    int clientSocket; // Example member variable for client socket
-public:
-    Server(int port,Database *database);
-    ~Server();
-    void run();
-
-private:
     int port;
     int serverFD;
     int clientSocket;
@@ -82,24 +74,20 @@ private:
     int addressLength;
     const int bufferSize = 1024;
     std::unordered_map<std::string, std::string> user_db_;
-    Database *userDatabase;
+    Database *database;
+public:
+    Server(int port,Database *database);
+    ~Server();
+    void run();
 
+private:
     void createSocket();
     void bindSocket();
     void listenForConnections();
     void acceptConnection();
     void handleClient();
-    bool validateUser(const std::string& userId, const std::string& password);
     void initializeDatabase();
 
-    bool incrementVoteCount(int foodItemId);
-    bool createEmployeeProfile(const std::string& employeeId, const std::string& foodPreference,
-                                   const std::string& spiceLevel, const std::string& cuisinePreference,
-                                   const std::string& hasSweetTooth);
-    void sendNotificationToChef(const std::string& message);
-    std::string checkNotificationsForChef();
-    std::string generateDiscardMenuList() ;
-    void handleDiscardMenuOptions(const std::string &command, const std::string &data);
 };
 
 #endif

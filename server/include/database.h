@@ -10,6 +10,8 @@
 #include <vector>
 #include <feedback.h>
 #include <sstream>
+#include "employee.h"
+#include "dailyMenu.h"
 class Database {
 
 private:
@@ -39,9 +41,10 @@ public:
     bool storeEmployeeProfileInDatabase(const std::string &employeeId, const std::string &foodPreference,
                                    const std::string &spiceLevel, const std::string &cuisinePreference,
                                    const std::string &hasSweetTooth);
-    std::string Database::fetchFeedbackForAnFoodItem(const std::string &foodItemName);
+    std::string fetchFeedbackForAnFoodItem(const std::string &foodItemName);
     bool addFoodItemsToDailyMenu();
-
+    bool storeNotificationInDatabase(const std::string &message);
+    void createTablesInDatabase()
 };
 
-#endif // DATABASE_H
+#endif 

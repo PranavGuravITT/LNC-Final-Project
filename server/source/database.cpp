@@ -17,7 +17,87 @@ sql::Connection *Database::getConnection()
 {
     return connection;
 }
+void Database::createTablesInDatabase(){
 
+    std::unique_ptr<sql::Statement> stmt(getConnection()->createStatement());
+    stmt->execute("CREATE TABLE IF NOT EXISTS EMPLOYEES ("
+                  "employee_id VARCHAR(255) PRIMARY KEY, "
+                  "employee_name VARCHAR(255) NOT NULL UNIQUE, "
+                  "password VARCHAR(255) NOT NULL)");
+
+    stmt->execute("CREATE TABLE IF NOT EXISTS FOOD_ITEMS ("
+                  "food_item_id INT AUTO_INCREMENT PRIMARY KEY, "
+                  "food_item_name VARCHAR(100) NOT NULL, "
+                  "price DOUBLE NOT NULL, "
+                  "availability BOOLEAN NOT NULL, "
+                  "food_type ENUM('Vegetarian', 'NonVegetarian', 'Eggetarian') NOT NULL, "
+                  "cuisine_type ENUM('NorthIndian', 'SouthIndian', 'Other') NOT NULL, "
+                  "spice_level ENUM('High', 'Medium', 'Low') NOT NULL)");
+
+    stmt->execute("CREATE TABLE IF NOT EXISTS FEEDBACK ("
+                  "feedback_id INT AUTO_INCREMENT PRIMARY KEY, "
+                  "food_item_id INT, "
+                  "employee_id VARCHAR(255), "
+                  "rating INT, "
+                  "comment VARCHAR(255), "
+                  "FOREIGN KEY (food_item_id) REFERENCES FOOD_ITEMS(food_item_id) ON DELETE CASCADE, "
+                  "FOREIGN KEY (employee_id) REFERENCES EMPLOYEES(employee_id) ON DELETE CASCADE)");
+
+    stmt->execute("CREATE TABLE IF NOT EXISTS VOTES ("
+                  "food_item_id INT PRIMARY KEY, "
+                  "count_of_votes INT NOT NULL, "
+                  "FOREIGN KEY (food_item_id) REFERENCES FOOD_ITEMS(food_item_id) ON DELETE CASCADE)");
+
+    stmt->execute("CREATE TABLE IF NOT EXISTS RECOMMENDATIONS ("
+                  "id INT AUTO_INCREMENT PRIMARY KEY, "
+                  "food_item_id INT NOT NULL, "
+                  "food_item_name VARCHAR(255) NOT NULL, "
+                  "price DOUBLE NOT NULL, "
+                  "rating INT NOT NULL, "
+                  "FOREIGN KEY (food_item_id) REFERENCES FOOD_ITEMS(food_item_id) ON DELETE CASCADE)");
+
+    stmt->execute("CREATE TABLE IF NOT EXISTS DAILY_MENU ("
+                  "menu_date DATE NOT NULL, "
+                  "item_id INT NOT NULL, "
+                  "PRIMARY KEY (item_id, menu_date), "
+                  "FOREIGN KEY (item_id) REFERENCES RECOMMENDATIONS(food_item_id) ON DELETE CASCADE)");
+
+    stmt->execute("DROP TRIGGER IF EXISTS before_insert_daily_menu");
+
+    stmt->execute("CREATE TRIGGER before_insert_daily_menu "
+                  "BEFORE INSERT ON DAILY_MENU "
+                  "FOR EACH ROW "
+                  "BEGIN "
+                  "IF NEW.menu_date IS NULL THEN "
+                  "SET NEW.menu_date = CURRENT_DATE(); "
+                  "END IF; "
+                  "END;");
+
+    stmt->execute("CREATE TABLE IF NOT EXISTS EMPLOYEE_PROFILES ("
+                  "profile_id INT AUTO_INCREMENT PRIMARY KEY, "
+                  "employee_id VARCHAR(255) UNIQUE, "
+                  "food_preference ENUM('Vegetarian', 'Non Vegetarian', 'Eggetarian'), "
+                  "spice_level ENUM('High', 'Medium', 'Low'), "
+                  "cuisine_preference ENUM('North Indian', 'South Indian', 'Other'), "
+                  "sweet_tooth ENUM('No', 'Yes'), "
+                  "FOREIGN KEY (employee_id) REFERENCES EMPLOYEES(employee_id) ON DELETE CASCADE)");
+
+    stmt->execute("CREATE TABLE IF NOT EXISTS NOTIFICATIONS ("
+                  "notification_id INT AUTO_INCREMENT PRIMARY KEY, "
+                  "message VARCHAR(255) NOT NULL, "
+                  "recipient VARCHAR(255) NOT NULL)");
+
+    stmt->execute("CREATE TABLE IF NOT EXISTS DISCARD_MENU ("
+                  "food_item_id INT PRIMARY KEY, "
+                  "food_item_name VARCHAR(255) NOT NULL, "
+                  "avg_rating DOUBLE NOT NULL, "
+                  "FOREIGN KEY (food_item_id) REFERENCES FOOD_ITEMS(food_item_id) ON DELETE CASCADE)");
+
+    stmt->execute("CREATE TABLE IF NOT EXISTS FEEDBACK_RESPONSES ("
+                  "response_id INT AUTO_INCREMENT PRIMARY KEY, "
+                  "food_item_name VARCHAR(100) NOT NULL, "
+                  "feedback_text TEXT NOT NULL)");
+}
 bool Database::validateUser(const std::string &userId, const std::string &password)
 {
     try
@@ -257,7 +337,6 @@ bool Database::incrementVoteCountInDatabase(int foodItemId)
             std::unique_ptr<sql::PreparedStatement> insertStmt(getConnection()->prepareStatement(
                 "INSERT INTO VOTES (food_item_id, count_of_votes) VALUES (?, 1)"));
             insertStmt->setInt(1, foodItemId);
-            insertStmt->execute();
         }
         return true;
     }
@@ -281,7 +360,7 @@ void Database::clearRecommendationTable()
     }
 }
 
-bool Server::addRecommendationToDatabase(const FoodItem &item)
+bool Database::addRecommendationToDatabase(const FoodItem &item)
 {
     try
     {
@@ -414,12 +493,29 @@ bool Database::addFoodItemsToDailyMenu(){
                         std::cerr << "MySQL error: " << e.what() << std::endl;
                     }
                 }
-
-                response = "success";
             }
             catch (sql::SQLException &e)
             {
                 std::cerr << "MySQL error: " << e.what() << std::endl;
-                response = "failure";
+                
             }
+            return true;
+}
+
+
+bool Database::storeNotificationInDatabase(const std::string &message)
+{
+    try
+    {
+        std::unique_ptr<sql::PreparedStatement> pstmt(userDatabase->getConnection()->prepareStatement(
+            "INSERT INTO NOTIFICATIONS (message, recipient) VALUES (?, 'chef')"));
+
+        pstmt->setString(1, message);
+        pstmt->execute();
+    }
+    catch (sql::SQLException &e)
+    {
+        std::cerr << "MySQL error: " << e.what() << std::endl;
+    }
+    return true;
 }

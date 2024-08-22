@@ -52,23 +52,23 @@ class Server {
     void run();
 private:
     CommandType getCommandType(const std::string& command);
-    std::string handleValidateCommand(std::istringstream& ss);
-    std::string handleRegisterEmployeeCommand(std::istringstream& ss);
-    std::string handleAddFoodItemCommand(std::istringstream& ss);
+    std::string handleValidateCommand(std::istringstream& data);
+    std::string handleRegisterEmployeeCommand(std::istringstream& data);
+    std::string handleAddFoodItemCommand(std::istringstream& data);
     std::string handleViewMenuCommand();
     std::string handleCheckNotificationsCommand();
-    std::string handleDeleteFoodItemCommand(std::istringstream& ss);
-    std::string handleDeleteUserCommand(std::istringstream& ss);
-    std::string handleAddFeedbackCommand(std::istringstream& ss);
+    std::string handleDeleteFoodItemCommand(std::istringstream& data);
+    std::string handleDeleteUserCommand(std::istringstream& data);
+    std::string handleAddFeedbackCommand(std::istringstream& data);
     std::string handleGetRecommendationsCommand();
     std::string handleViewDiscardMenuCommand();
-    std::string handleIncrementVoteCommand(std::istringstream& ss);
-    std::string handleStoreRecommendationsCommand(std::istringstream& ss);
+    std::string handleIncrementVoteCommand(std::istringstream& data);
+    std::string handleStoreRecommendationsCommand(std::istringstream& data);
     std::string handleRollOutCommand();
-    std::string handleCreateProfileCommand(std::istringstream& ss);
+    std::string handleCreateProfileCommand(std::istringstream& data);
     std::string handleViewDailyMenuCommand();
-    std::string handleRequestFeedbackCommand(std::istringstream& ss);
-    std::string handleFetchFeedbackCommand(std::istringstream& ss);
+    std::string handleRequestFeedbackCommand(std::istringstream& data);
+    std::string handleFetchFeedbackCommand(std::istringstream& data);
 
     void createSocket();
     void bindSocket();

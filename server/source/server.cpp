@@ -47,10 +47,10 @@ void Server::handleClient()
     {
         read(clientSocket, buffer, BUFFER_SIZE);
         std::string request(buffer);
-        std::istringstream ss(request);
+        std::istringstream data(request);
 
         std::string commandStr;
-        std::getline(ss, commandStr, ':');
+        std::getline(data, commandStr, ':');
 
         CommandType command = getCommandType(commandStr);
 
@@ -58,13 +58,13 @@ void Server::handleClient()
         switch (command)
         {
         case VALIDATE:
-            response = handleValidateCommand(ss);
+            response = handleValidateCommand(data);
             break;
         case REGISTER_EMPLOYEE:
-            response = handleRegisterEmployeeCommand(ss);
+            response = handleRegisterEmployeeCommand(data);
             break;
         case ADD_FOOD_ITEM:
-            response = handleAddFoodItemCommand(ss);
+            response = handleAddFoodItemCommand(data);
             break;
         case VIEW_MENU:
             response = handleViewMenuCommand();
@@ -73,13 +73,13 @@ void Server::handleClient()
             response = handleCheckNotificationsCommand();
             break;
         case DELETE_FOOD_ITEM:
-            response = handleDeleteFoodItemCommand(ss);
+            response = handleDeleteFoodItemCommand(data);
             break;
         case DELETE_USER:
-            response = handleDeleteUserCommand(ss);
+            response = handleDeleteUserCommand(data);
             break;
         case ADD_FEEDBACK:
-            response = handleAddFeedbackCommand(ss);
+            response = handleAddFeedbackCommand(data);
             break;
         case GET_RECOMMENDATIONS:
             response = handleGetRecommendationsCommand();
@@ -88,25 +88,25 @@ void Server::handleClient()
             response = handleViewDiscardMenuCommand();
             break;
         case INCREMENT_VOTE:
-            response = handleIncrementVoteCommand(ss);
+            response = handleIncrementVoteCommand(data);
             break;
         case STORE_RECOMMENDATIONS:
-            response = handleStoreRecommendationsCommand(ss);
+            response = handleStoreRecommendationsCommand(data);
             break;
         case ROLL_OUT:
             response = handleRollOutCommand();
             break;
         case CREATE_PROFILE:
-            response = handleCreateProfileCommand(ss);
+            response = handleCreateProfileCommand(data);
             break;
         case VIEW_DAILY_MENU:
             response = handleViewDailyMenuCommand();
             break;
         case REQUEST_FEEDBACK:
-            response = handleRequestFeedbackCommand(ss);
+            response = handleRequestFeedbackCommand(data);
             break;
         case FETCH_FEEDBACK:
-            response = handleFetchFeedbackCommand(ss);
+            response = handleFetchFeedbackCommand(data);
             break;
         default:
             response = "Unknown command";
@@ -117,34 +117,34 @@ void Server::handleClient()
         memset(buffer, 0, BUFFER_SIZE);
     }
 }
-std::string Server::handleValidateCommand(std::istringstream &ss)
+std::string Server::handleValidateCommand(std::istringstream &data)
 {
     std::string userId, password;
-    std::getline(ss, userId, ':');
-    std::getline(ss, password, ':');
+    std::getline(data, userId, ':');
+    std::getline(data, password, ':');
     return database->validateUser(userId, password) ? RESPONSE_SUCCESS : RESPONSE_FAILURE;
 }
 
-std::string Server::handleRegisterEmployeeCommand(std::istringstream &ss)
+std::string Server::handleRegisterEmployeeCommand(std::istringstream &data)
 {
     std::string employeeId, employeeName, password;
-    std::getline(ss, employeeId, ':');
-    std::getline(ss, employeeName, ':');
-    std::getline(ss, password, ':');
+    std::getline(data, employeeId, ':');
+    std::getline(data, employeeName, ':');
+    std::getline(data, password, ':');
     Employee employee(employeeId, employeeName, password);
     return database->addEmployeeToDatabase(employee) ? "Employee added successfully" : "Failed to add new employee";
 }
 
-std::string Server::handleAddFoodItemCommand(std::istringstream &ss)
+std::string Server::handleAddFoodItemCommand(std::istringstream &data)
 {
     std::string foodName, foodType, cuisineType, spiceLevel, response;
     double price;
-    std::getline(ss, foodName, ':');
-    ss >> price;
-    ss.ignore();
-    std::getline(ss, foodType, ':');
-    std::getline(ss, cuisineType, ':');
-    std::getline(ss, spiceLevel, ':');
+    std::getline(data, foodName, ':');
+    data >> price;
+    data.ignore();
+    std::getline(data, foodType, ':');
+    std::getline(data, cuisineType, ':');
+    std::getline(data, spiceLevel, ':');
     FoodItem foodItem;
     foodItem.setFoodItemName(foodName);
     foodItem.setPrice(price);
@@ -186,30 +186,30 @@ std::string Server::handleCheckNotificationsCommand()
     return database->fetchNotificationsFromDatabase();
 }
 
-std::string Server::handleDeleteFoodItemCommand(std::istringstream &ss)
+std::string Server::handleDeleteFoodItemCommand(std::istringstream &data)
 {
     int foodItemId;
-    ss >> foodItemId;
+    data >> foodItemId;
     return database->deleteFoodItemFromDatabase(foodItemId) ? "Food item deleted successfully" : "Failed to delete food item";
 }
 
-std::string Server::handleDeleteUserCommand(std::istringstream &ss)
+std::string Server::handleDeleteUserCommand(std::istringstream &data)
 {
     std::string userId;
-    std::getline(ss, userId, ':');
+    std::getline(data, userId, ':');
     return database->deleteUserFromDatabase(userId) ? "User deleted successfully" : "Failed to delete user";
 }
 
-std::string Server::handleAddFeedbackCommand(std::istringstream &ss)
+std::string Server::handleAddFeedbackCommand(std::istringstream &data)
 {
     std::string employeeId, comment;
     int foodItemId, rating;
-    std::getline(ss, employeeId, ':');
-    ss >> foodItemId;
-    ss.ignore(1, ':');
-    ss >> rating;
-    ss.ignore(1, ':');
-    std::getline(ss, comment, ':');
+    std::getline(data, employeeId, ':');
+    data >> foodItemId;
+    data.ignore(1, ':');
+    data >> rating;
+    data.ignore(1, ':');
+    std::getline(data, comment, ':');
     FeedbackDetails feedback(foodItemId, employeeId, rating, comment);
     return database->addFeedbackToDatabase(feedback) ? "Feedback stored successfully" : "Failed to store feedback";
 }
@@ -236,17 +236,17 @@ std::string Server::handleViewDiscardMenuCommand()
     return database->getDiscardMenuList();
 }
 
-std::string Server::handleIncrementVoteCommand(std::istringstream &ss)
+std::string Server::handleIncrementVoteCommand(std::istringstream &data)
 {
     int foodItemId;
-    ss >> foodItemId;
+    data >> foodItemId;
     return database->incrementVoteCountInDatabase(foodItemId) ? "Vote count incremented successfully" : "Failed to increment vote count";
 }
 
-std::string Server::handleStoreRecommendationsCommand(std::istringstream &ss)
+std::string Server::handleStoreRecommendationsCommand(std::istringstream &data)
 {
     std::string recommendationsStr;
-    std::getline(ss, recommendationsStr);
+    std::getline(data, recommendationsStr);
     std::istringstream recommendationsStream(recommendationsStr);
     std::string recommendation;
     database->clearRecommendationTable();
@@ -268,11 +268,11 @@ std::string Server::handleStoreRecommendationsCommand(std::istringstream &ss)
     return "Recommendations stored successfully";
 }
 
-std::string Server::handleCreateProfileCommand(std::istringstream &ss)
+std::string Server::handleCreateProfileCommand(std::istringstream &data)
 {
     std::string userId, profileAnswers;
-    std::getline(ss, userId, ':');
-    std::getline(ss, profileAnswers);
+    std::getline(data, userId, ':');
+    std::getline(data, profileAnswers);
     std::istringstream profileStream(profileAnswers);
     std::string answer;
     std::vector<std::string> answers;
@@ -307,10 +307,10 @@ std::string Server::handleViewDailyMenuCommand()
     return responseData;
 }
 
-std::string Server::handleFetchFeedbackCommand(std::istringstream &ss)
+std::string Server::handleFetchFeedbackCommand(std::istringstream &data)
 {
     std::string foodItemName, responseData;
-    std::getline(ss, foodItemName);
+    std::getline(data, foodItemName);
     responseData = database->fetchFeedbackForAnFoodItem(foodItemName);
     return responseData;
 }

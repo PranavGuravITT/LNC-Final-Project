@@ -242,7 +242,7 @@ bool Database::addFeedbackToDatabase(const FeedbackDetails &feedback)
 {
     try
     {
-        std::unique_ptr<sql::PreparedStatement> pstmt(userDatabase->getConnection()->prepareStatement(
+        std::unique_ptr<sql::PreparedStatement> pstmt(getConnection()->prepareStatement(
             "INSERT INTO FEEDBACK (employee_id, food_item_id, rating,comment) VALUES (?, ?, ?, ?)"));
         pstmt->setString(1, feedback.getUserId());
         pstmt->setInt(2, feedback.getFoodItemId());
@@ -365,7 +365,7 @@ bool Database::addRecommendationToDatabase(const FoodItem &item)
     try
     {
         std::cout << "Adding data to data base" << std::endl;
-        std::unique_ptr<sql::PreparedStatement> pstmt(userDatabase->getConnection()->prepareStatement(
+        std::unique_ptr<sql::PreparedStatement> pstmt(getConnection()->prepareStatement(
             "INSERT INTO RECOMMENDATIONS (food_item_id, food_item_name,price,rating) VALUES (?, ?, ?, ?)"));
 
         pstmt->setInt(1, item.getFoodItemId());

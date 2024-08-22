@@ -46,7 +46,10 @@ enum CommandType {
 };
 class Server {
     public:
+    Server(int port,Database *database);
+    ~Server();
     void handleClient();
+    void run();
 private:
     CommandType getCommandType(const std::string& command);
     std::string handleValidateCommand(std::istringstream& ss);
@@ -67,6 +70,13 @@ private:
     std::string handleRequestFeedbackCommand(std::istringstream& ss);
     std::string handleFetchFeedbackCommand(std::istringstream& ss);
 
+    void createSocket();
+    void bindSocket();
+    void listenForConnections();
+    void acceptConnection();
+    void handleClient();
+    void initializeDatabase();
+
     int port;
     int serverFD;
     int clientSocket;
@@ -75,19 +85,6 @@ private:
     const int bufferSize = 1024;
     std::unordered_map<std::string, std::string> user_db_;
     Database *database;
-public:
-    Server(int port,Database *database);
-    ~Server();
-    void run();
-
-private:
-    void createSocket();
-    void bindSocket();
-    void listenForConnections();
-    void acceptConnection();
-    void handleClient();
-    void initializeDatabase();
-
 };
 
 #endif

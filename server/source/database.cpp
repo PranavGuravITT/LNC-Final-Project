@@ -17,7 +17,8 @@ sql::Connection *Database::getConnection()
 {
     return connection;
 }
-void Database::createTablesInDatabase(){
+void Database::createTablesInDatabase()
+{
 
     std::unique_ptr<sql::Statement> stmt(getConnection()->createStatement());
     stmt->execute("CREATE TABLE IF NOT EXISTS EMPLOYEES ("
@@ -102,10 +103,10 @@ bool Database::validateUser(const std::string &userId, const std::string &passwo
 {
     try
     {
-        std::unique_ptr<sql::PreparedStatement> pstmt(getConnection()->prepareStatement("SELECT password FROM EMPLOYEES WHERE employee_id = ?"));
+        std::unique_ptr<sql::PreparedStatement> statement(getConnection()->prepareStatement("SELECT password FROM EMPLOYEES WHERE employee_id = ?"));
 
-        pstmt->setString(1, userId);
-        std::unique_ptr<sql::ResultSet> res(pstmt->executeQuery());
+        statement->setString(1, userId);
+        std::unique_ptr<sql::ResultSet> res(statement->executeQuery());
 
         if (res->next())
         {
@@ -121,38 +122,39 @@ bool Database::validateUser(const std::string &userId, const std::string &passwo
     return false;
 }
 
-bool Server::addEmployeeToDatabase(Employee employee)
+bool Database::addEmployeeToDatabase(Employee employee)
 {
+    bool status = false;
     try
     {
-        std::unique_ptr<sql::PreparedStatement> pstmt(userDatabase->getConnection()->prepareStatement("INSERT INTO EMPLOYEES (employee_id, employee_name, password) VALUES (?, ?, ?)"));
-        pstmt->setString(1, employee.getEmployeeId());
-        pstmt->setString(2, employee.getEmployeeName());
-        pstmt->setString(3, employee.getPassword());
-        pstmt->execute();
-        return true;
+        std::unique_ptr<sql::PreparedStatement> statement(getConnection()->prepareStatement("INSERT INTO EMPLOYEES (employee_id, employee_name, password) VALUES (?, ?, ?)"));
+        statement->setString(1, employee.getEmployeeId());
+        statement->setString(2, employee.getEmployeeName());
+        statement->setString(3, employee.getPassword());
+        statement->execute();
+        status = true;
     }
     catch (sql::SQLException &e)
     {
         std::cerr << "MySQL error: " << e.what() << std::endl;
     }
-    return false;
+    return status;
 }
 
 bool Database::addFoodItemToDatabase(const FoodItem &foodItem)
 {
     try
     {
-        std::unique_ptr<sql::PreparedStatement> pstmt(getConnection()->prepareStatement(
+        std::unique_ptr<sql::PreparedStatement> statement(getConnection()->prepareStatement(
             "INSERT INTO FOOD_ITEMS (food_item_name, price, availability, food_type, cuisine_type, spice_level) VALUES (?, ?, ?, ?, ?, ?)"));
 
-        pstmt->setString(1, foodItem.getFoodItemName());
-        pstmt->setDouble(2, foodItem.getPrice());
-        pstmt->setBoolean(3, foodItem.checkAvailability());
-        pstmt->setString(4, foodItem.getFoodType());
-        pstmt->setString(5, foodItem.getCuisineType());
-        pstmt->setString(6, foodItem.getSpiceLevel());
-        pstmt->execute();
+        statement->setString(1, foodItem.getFoodItemName());
+        statement->setDouble(2, foodItem.getPrice());
+        statement->setBoolean(3, foodItem.checkAvailability());
+        statement->setString(4, foodItem.getFoodType());
+        statement->setString(5, foodItem.getCuisineType());
+        statement->setString(6, foodItem.getSpiceLevel());
+        statement->execute();
         return true;
     }
     catch (sql::SQLException &e)
@@ -208,47 +210,49 @@ std::string Database::fetchNotificationsFromDatabase()
 
 bool Database::deleteFoodItemFromDatabase(int foodItemId)
 {
+    bool status = false;
     try
     {
-        std::unique_ptr<sql::PreparedStatement> pstmt(userDatabase->getConnection()->prepareStatement("DELETE FROM FOOD_ITEMS WHERE food_item_id = ?"));
-        pstmt->setInt(1, foodItemId);
-        pstmt->execute();
-        return true;
+        std::unique_ptr<sql::PreparedStatement> statement(getConnection()->prepareStatement("DELETE FROM FOOD_ITEMS WHERE food_item_id = ?"));
+        statement->setInt(1, foodItemId);
+        statement->execute();
+        status = true;
     }
     catch (sql::SQLException &e)
     {
         std::cerr << "MySQL error: " << e.what() << std::endl;
     }
-    return false;
+    return status;
 }
 
 bool Database::deleteUserFromDatabase(const std::string &userId)
 {
+    bool status = false;
     try
     {
-        std::unique_ptr<sql::PreparedStatement> pstmt(getConnection()->prepareStatement("DELETE FROM EMPLOYEES WHERE employee_id = ?"));
-        pstmt->setString(1, userId);
-        pstmt->execute();
-        return true;
+        std::unique_ptr<sql::PreparedStatement> statement(getConnection()->prepareStatement("DELETE FROM EMPLOYEES WHERE employee_id = ?"));
+        statement->setString(1, userId);
+        statement->execute();
+        status = true;
     }
     catch (sql::SQLException &e)
     {
         std::cerr << "MySQL error: " << e.what() << std::endl;
     }
-    return false;
+    return status;
 }
 
 bool Database::addFeedbackToDatabase(const FeedbackDetails &feedback)
 {
     try
     {
-        std::unique_ptr<sql::PreparedStatement> pstmt(getConnection()->prepareStatement(
+        std::unique_ptr<sql::PreparedStatement> statement(getConnection()->prepareStatement(
             "INSERT INTO FEEDBACK (employee_id, food_item_id, rating,comment) VALUES (?, ?, ?, ?)"));
-        pstmt->setString(1, feedback.getUserId());
-        pstmt->setInt(2, feedback.getFoodItemId());
-        pstmt->setInt(3, feedback.getRating());
-        pstmt->setString(4, feedback.getComment());
-        pstmt->execute();
+        statement->setString(1, feedback.getUserId());
+        statement->setInt(2, feedback.getFoodItemId());
+        statement->setInt(3, feedback.getRating());
+        statement->setString(4, feedback.getComment());
+        statement->execute();
         return true;
     }
     catch (sql::SQLException &e)
@@ -257,7 +261,6 @@ bool Database::addFeedbackToDatabase(const FeedbackDetails &feedback)
     }
     return false;
 }
-
 
 std::vector<FeedbackDetails> Database::fetchFeedbacksFromDatabase()
 {
@@ -365,15 +368,15 @@ bool Database::addRecommendationToDatabase(const FoodItem &item)
     try
     {
         std::cout << "Adding data to data base" << std::endl;
-        std::unique_ptr<sql::PreparedStatement> pstmt(getConnection()->prepareStatement(
+        std::unique_ptr<sql::PreparedStatement> statement(getConnection()->prepareStatement(
             "INSERT INTO RECOMMENDATIONS (food_item_id, food_item_name,price,rating) VALUES (?, ?, ?, ?)"));
 
-        pstmt->setInt(1, item.getFoodItemId());
-        pstmt->setString(2, item.getFoodItemName());
-        pstmt->setDouble(3, item.getPrice());
-        pstmt->setInt(4, item.getRating());
+        statement->setInt(1, item.getFoodItemId());
+        statement->setString(2, item.getFoodItemName());
+        statement->setDouble(3, item.getPrice());
+        statement->setInt(4, item.getRating());
 
-        pstmt->execute();
+        statement->execute();
         return true;
     }
     catch (sql::SQLException &e)
@@ -384,22 +387,22 @@ bool Database::addRecommendationToDatabase(const FoodItem &item)
 }
 
 bool Database::storeEmployeeProfileInDatabase(const std::string &employeeId, const std::string &foodPreference,
-                                   const std::string &spiceLevel, const std::string &cuisinePreference,
-                                   const std::string &hasSweetTooth)
+                                              const std::string &spiceLevel, const std::string &cuisinePreference,
+                                              const std::string &hasSweetTooth)
 {
     try
     {
-        std::unique_ptr<sql::PreparedStatement> pstmt(userDatabase->getConnection()->prepareStatement(
+        std::unique_ptr<sql::PreparedStatement> statement(getConnection()->prepareStatement(
             "INSERT INTO EMPLOYEE_PROFILES (employee_id, food_preference, spice_level, cuisine_preference, sweet_tooth) "
             "VALUES (?, ?, ?, ?, ?)"));
 
-        pstmt->setString(1, employeeId);
-        pstmt->setString(2, foodPreference);
-        pstmt->setString(3, spiceLevel);
-        pstmt->setString(4, cuisinePreference);
-        pstmt->setString(5, hasSweetTooth);
+        statement->setString(1, employeeId);
+        statement->setString(2, foodPreference);
+        statement->setString(3, spiceLevel);
+        statement->setString(4, cuisinePreference);
+        statement->setString(5, hasSweetTooth);
 
-        pstmt->execute();
+        statement->execute();
         return true;
     }
     catch (sql::SQLException &e)
@@ -414,7 +417,7 @@ std::vector<DailyMenu> Database::fetchDailyMenuFromDatabase()
     std::vector<DailyMenu> dailyMenu;
     try
     {
-        std::unique_ptr<sql::Statement> stmt(userDatabase->getConnection()->createStatement());
+        std::unique_ptr<sql::Statement> stmt(getConnection()->createStatement());
         std::unique_ptr<sql::ResultSet> res(stmt->executeQuery(
             "SELECT dm.menu_date, dm.item_id, r.food_item_name, r.price,r.rating "
             "FROM DAILY_MENU dm "
@@ -441,10 +444,10 @@ std::vector<DailyMenu> Database::fetchDailyMenuFromDatabase()
 
 std::string Database::fetchFeedbackForAnFoodItem(const std::string &foodItemName)
 {
-    std::unique_ptr<sql::PreparedStatement> pstmt(userDatabase->getConnection()->prepareStatement(
+    std::unique_ptr<sql::PreparedStatement> statement(getConnection()->prepareStatement(
         "SELECT feedback_text FROM FEEDBACK_RESPONSES WHERE food_item_name = ?"));
-    pstmt->setString(1, foodItemName);
-    std::unique_ptr<sql::ResultSet> res(pstmt->executeQuery());
+    statement->setString(1, foodItemName);
+    std::unique_ptr<sql::ResultSet> res(statement->executeQuery());
 
     std::string feedbackList;
     while (res->next())
@@ -453,13 +456,12 @@ std::string Database::fetchFeedbackForAnFoodItem(const std::string &foodItemName
     }
 
     return feedbackList;
-    send(clientSocket, feedbackList.c_str(), feedbackList.length(), 0);
 }
 void Database::clearDailyMenuTable()
 {
     try
     {
-        std::unique_ptr<sql::Statement> stmt(userDatabase->getConnection()->createStatement());
+        std::unique_ptr<sql::Statement> stmt(getConnection()->createStatement());
         stmt->execute("DELETE FROM DAILY_MENU");
     }
     catch (sql::SQLException &e)
@@ -467,51 +469,50 @@ void Database::clearDailyMenuTable()
         std::cerr << "MySQL error: " << e.what() << std::endl;
     }
 }
-bool Database::addFoodItemsToDailyMenu(){
+bool Database::addFoodItemsToDailyMenu()
+{
+
+    try
+    {
+        std::unique_ptr<sql::Statement> stmt(getConnection()->createStatement());
+        std::unique_ptr<sql::ResultSet> res(stmt->executeQuery("SELECT food_item_id FROM RECOMMENDATIONS"));
+
+        clearDailyMenuTable();
+
+        while (res->next())
+        {
+            int foodItemId = res->getInt("food_item_id");
 
             try
             {
-                std::unique_ptr<sql::Statement> stmt(userDatabase->getConnection()->createStatement());
-                std::unique_ptr<sql::ResultSet> res(stmt->executeQuery("SELECT food_item_id FROM RECOMMENDATIONS"));
+                std::unique_ptr<sql::PreparedStatement> statement(getConnection()->prepareStatement(
+                    "INSERT INTO DAILY_MENU (item_id) VALUES (?)"));
 
-                clearDailyMenuTable();
-
-                while (res->next())
-                {
-                    int foodItemId = res->getInt("food_item_id");
-
-                    try
-                    {
-                        std::unique_ptr<sql::PreparedStatement> pstmt(userDatabase->getConnection()->prepareStatement(
-                            "INSERT INTO DAILY_MENU (item_id) VALUES (?)"));
-
-                        pstmt->setInt(1, foodItemId);
-                        pstmt->execute();
-                    }
-                    catch (sql::SQLException &e)
-                    {
-                        std::cerr << "MySQL error: " << e.what() << std::endl;
-                    }
-                }
+                statement->setInt(1, foodItemId);
+                statement->execute();
             }
             catch (sql::SQLException &e)
             {
                 std::cerr << "MySQL error: " << e.what() << std::endl;
-                
             }
-            return true;
+        }
+    }
+    catch (sql::SQLException &e)
+    {
+        std::cerr << "MySQL error: " << e.what() << std::endl;
+    }
+    return true;
 }
-
 
 bool Database::storeNotificationInDatabase(const std::string &message)
 {
     try
     {
-        std::unique_ptr<sql::PreparedStatement> pstmt(userDatabase->getConnection()->prepareStatement(
+        std::unique_ptr<sql::PreparedStatement> statement(getConnection()->prepareStatement(
             "INSERT INTO NOTIFICATIONS (message, recipient) VALUES (?, 'chef')"));
 
-        pstmt->setString(1, message);
-        pstmt->execute();
+        statement->setString(1, message);
+        statement->execute();
     }
     catch (sql::SQLException &e)
     {

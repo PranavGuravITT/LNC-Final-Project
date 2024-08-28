@@ -4,23 +4,25 @@
 #include <iostream>
 #include "database.h"
 RecommendationEngine::RecommendationEngine(Database *database) : database(database) {}
+
 std::vector<FoodItem> RecommendationEngine::getRecommendations(const std::vector<FeedbackDetails> &feedbacks)
 {
-    std::unordered_map<int, int> ratingSums;
+    std::unordered_map<int, double> weightedSums;
     std::unordered_map<int, int> ratingCounts;
 
     for (const auto &feedback : feedbacks)
     {
-        ratingSums[feedback.getFoodItemId()] += feedback.getRating();
+        double sentimentWeight = SentimentAnalyzer::analyze(feedback.getComment());
+        weightedSums[feedback.getFoodItemId()] += feedback.getRating() * sentimentWeight;
         ratingCounts[feedback.getFoodItemId()] += 1;
     }
 
     std::vector<std::pair<int, double>> avgRatings;
 
-    for (const auto &entry : ratingSums)
+    for (const auto &entry : weightedSums)
     {
         int foodItemId = entry.first;
-        double avgRating = static_cast<double>(entry.second) / ratingCounts[foodItemId];
+        double avgRating = entry.second / ratingCounts[foodItemId];
         avgRatings.emplace_back(foodItemId, avgRating);
     }
 
@@ -28,15 +30,16 @@ std::vector<FoodItem> RecommendationEngine::getRecommendations(const std::vector
               { return firstElement.second > secondElement.second; });
 
     std::vector<FoodItem> recommendations;
-    for (const auto &iterator : avgRatings)
+    for (const auto &entry : avgRatings)
     {
-        FoodItem item = fetchFoodItemById(iterator.first);
-        item.setRating(iterator.second);
+        FoodItem item = fetchFoodItemById(entry.first);
+        item.setRating(entry.second);
         recommendations.push_back(item);
     }
 
     return recommendations;
 }
+
 
 FoodItem RecommendationEngine::fetchFoodItemById(int foodItemId)
 {

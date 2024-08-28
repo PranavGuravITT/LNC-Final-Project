@@ -14,14 +14,12 @@ private:
 public:
     FeedbackDetails(int foodItemId, std::string userId, int rating, std::string cmt);
 
-    // Getters
     int getFeedbackId() const;
     int getFoodItemId() const;
     std::string getUserId() const;
     int getRating() const;
     std::string getComment() const;
 
-    // Setters
     void setFeedbackId(int id);
     void setFoodItemId(int id);
     void setUserId(int id);
@@ -29,4 +27,4 @@ public:
     void setComment(const std::string &comment);
 };
 
-#endif // FEEDBACKDETAILS_H
+#endif 

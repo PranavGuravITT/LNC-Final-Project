@@ -5,6 +5,7 @@
 #include "feedback.h"
 #include "foodItem.h"
 #include "database.h"
+#include "sentimentAnalyzer.h"
 class RecommendationEngine {
     Database *database;
 public:

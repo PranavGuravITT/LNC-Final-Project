@@ -8,6 +8,14 @@
 #include "chef.h"
 #include "employee.h"
 
+#define CHEF_ID "CHF_1"
+#define CHEF_USERNAME "chef"
+#define CHEF_PASSWORD "Chef123"
+
+#define ADMIN_ID "ADM_1"
+#define ADMIN_USERNAME "admin"
+#define ADMIN_PASSWORD "Admin123"
+
 class ClientApp {
 private:
     ClientConnection clientConnection;

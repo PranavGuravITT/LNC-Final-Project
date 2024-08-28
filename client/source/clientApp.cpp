@@ -208,7 +208,7 @@ void ClientApp::displayDailyMenu(std::string &response)
 void ClientApp::adminScreen()
 {
     Authenticator authenticator(clientConnection);
-    Admin admin("ADM_1", "admin", "Admin123");
+    Admin admin(ADMIN_ID, ADMIN_USERNAME, ADMIN_PASSWORD);
 
     std::string userId, password, request, response;
     std::cout << "Enter User ID: ";
@@ -279,7 +279,7 @@ void ClientApp::adminScreen()
 void ClientApp::chefScreen()
 {
     Authenticator authenticator(clientConnection);
-    Chef chef("CHF_1", "chef", "Chef123");
+     Chef chef(CHEF_ID, CHEF_USERNAME, CHEF_PASSWORD);
 
     std::string userId, password, request, response;
 

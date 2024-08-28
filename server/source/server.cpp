@@ -49,10 +49,10 @@ void Server::handleClient()
         std::string request(buffer);
         std::istringstream data(request);
 
-        std::string commandStr;
-        std::getline(data, commandStr, ':');
+        std::string commandString;
+        std::getline(data, commandString, ':');
 
-        CommandType command = getCommandType(commandStr);
+        CommandType command = getCommandType(commandString);
 
         std::string response;
         switch (command)

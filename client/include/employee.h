@@ -8,6 +8,7 @@ class Employee{
     std::string employeeId;
     std::string employeeName;
     std::string password;
+    void inputProfileDetails(std::string &dietaryPreference, std::string &spiceLevel, std::string &cuisineType, std::string &hasSweetTooth);
 
     public:
     Employee() = default;
@@ -16,6 +17,8 @@ class Employee{
     std::string getEmployeeName();
     std::string getPassword();
     std::string viewDailyMenuRequest();
-    void giveFeedback();
+    std::string feedbackRequest();
+    std::string voteforFoodItemRequest();
+    std::string Employee::createProfileRequest()
 };
 #endif

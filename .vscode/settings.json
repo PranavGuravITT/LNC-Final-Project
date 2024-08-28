@@ -58,6 +58,11 @@
         "cinttypes": "cpp",
         "typeinfo": "cpp",
         "unordered_set": "cpp",
-        "fstream": "cpp"
+        "fstream": "cpp",
+        "any": "cpp",
+        "set": "cpp",
+        "optional": "cpp",
+        "span": "cpp",
+        "variant": "cpp"
     }
 }

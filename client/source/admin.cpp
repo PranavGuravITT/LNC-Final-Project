@@ -66,3 +66,8 @@ std::string Admin::deleteFoodItemRequest()
     std::string message = "DELETE_FOOD_ITEM:" + std::to_string(foodItemId);
     return message;
 }
+
+std::string Admin::viewDiscardMenuListRequest(){
+    std::string message = "VIEW_DISCARD_MENU";
+    return message;
+}

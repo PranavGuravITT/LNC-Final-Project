@@ -19,6 +19,7 @@ public:
     std::string deleteEmployeeRequest();
     std::string viewMenuRequest();
     std::string deleteFoodItemRequest();
+    std::string viewDiscardMenuListRequest();
 };
 
 #endif
